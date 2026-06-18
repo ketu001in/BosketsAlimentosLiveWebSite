@@ -7,12 +7,13 @@ $admin = require_admin();
 function admin_nav(string $active): void
 {
     $items = [
-        'index'    => ['index.php', 'Dashboard'],
-        'users'    => ['users.php', 'Users'],
-        'content'  => ['content.php', 'Content'],
-        'forum'    => ['forum.php', 'Forum'],
-        'masters'  => ['masters.php', 'Master Lists'],
-        'messages' => ['messages.php', 'Messages'],
+        'index'    => ['index.php',            'Dashboard'],
+        'users'    => ['users.php',            'Users'],
+        'content'  => ['content.php',          'Content'],
+        'forum'    => ['forum.php',            'Forum'],
+        'masters'  => ['masters.php',          'Master Lists'],
+        'messages' => ['messages.php',         'Messages'],
+        'import'   => ['import-blogspot.php',  'Import'],
     ];
     echo '<div class="admin-nav">';
     foreach ($items as $key => [$href, $label]) {
