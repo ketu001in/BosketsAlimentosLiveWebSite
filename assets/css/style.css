@@ -531,6 +531,7 @@ table.data tr:hover td { background: var(--green-50); }
   .nav-user { display: flex; align-items: flex-start; flex-direction: column; border-top: 1px solid var(--line); }
   .nav-avatar { padding: 10px 4px; }
   .nav-dropdown { display: block; position: static; box-shadow: none; border: 0; padding: 0 0 4px; min-width: 0; border-radius: 0; }
+  .nav-dropdown::before { display: none; }
   .nav-dropdown a { padding: 8px 4px; border-radius: 0; font-size: 13.5px; }
   /* Guest actions */
   .nav-signin { padding: 10px 4px; display: block; border-top: 1px solid var(--line); font: 600 13.5px/1.2 var(--font-body); letter-spacing: .04em; color: var(--ink); }
