@@ -496,13 +496,16 @@ table.data tr:hover td { background: var(--green-50); }
 @media (max-width: 900px) {
   .nav-toggle { display: block; margin-left: auto; }
   .header-inner { flex-wrap: wrap; }
-  /* tap ☰ to expand: actions + menu push the page down (no broken overlay) */
-  .nav-actions {
-    display: none; order: 3; width: 100%; margin-left: 0;
-    flex-direction: column; align-items: stretch; gap: 0;
+  /* tap ☰ to expand: actions + menu push the page down (no broken overlay).
+     Use .header-inner .nav-actions (same 0,2,0 spec as the desktop !important
+     rule) so these !important values win by source-order inside the media query. */
+  .header-inner .nav-actions {
+    display: none !important; flex-direction: column !important;
+    align-items: stretch !important; flex-wrap: wrap !important;
+    order: 3; width: 100%; margin-left: 0; gap: 0;
     border-top: 1px solid var(--line); margin-top: 10px; padding-top: 6px;
   }
-  body.nav-open .nav-actions { display: flex; }
+  body.nav-open .header-inner .nav-actions { display: flex !important; }
   .header-nav-bar { display: none; }
   body.nav-open .header-nav-bar { display: block; }
   .main-nav { flex-direction: column; align-items: stretch; gap: 2px; padding: 4px 0 8px; }
@@ -530,6 +533,9 @@ table.data tr:hover td { background: var(--green-50); }
   /* Avatar + dropdown: stacked list inside the open menu */
   .nav-user { display: flex; align-items: flex-start; flex-direction: column; border-top: 1px solid var(--line); }
   .nav-avatar { padding: 10px 4px; }
+  /* Kill the desktop hover/focus trigger so the dropdown is always flat on mobile */
+  .nav-user:hover .nav-dropdown,
+  .nav-user:focus-within .nav-dropdown { display: block; position: static; }
   .nav-dropdown { display: block; position: static; box-shadow: none; border: 0; padding: 0 0 4px; min-width: 0; border-radius: 0; }
   .nav-dropdown::before { display: none; }
   .nav-dropdown a { padding: 8px 4px; border-radius: 0; font-size: 13.5px; }
