@@ -1,0 +1,116 @@
+================================================================================
+PROJECT PROMPT — BOSKET'S ALIMENTOS
+================================================================================
+
+WEBSITE NAME : Bosket's Alimentos
+TAGLINE      : A world of truly fusion food
+CATEGORY     : 100% Vegetarian food community website
+
+OBJECTIVE
+---------
+Build a fully interactive, professional, production-ready food community
+website with complete database integration, ready to be published on an
+existing Hostinger.com hosting account. The website flow should take
+reference (flow only — no data, design, or content copying) from
+https://www.plattershare.com
+
+--------------------------------------------------------------------------------
+MODULE 1 — USER MANAGEMENT
+--------------------------------------------------------------------------------
+1.1 Registration & Account
+    - Users register with email + password.
+    - Full account management functionality (login, logout, password
+      reset/change, edit profile, delete/deactivate account, etc.).
+
+1.2 Avatar Upload
+    - Users can optionally upload an avatar or real photo.
+    - Maximum file size: 5 MB (validated).
+
+1.3 Profile & Wall
+    - Each registered user has a profile page with a personal "wall"
+      showing their posted food stories and recipes.
+    - Users can LIKE, REACT, COMMENT, and SHARE any recipe available on
+      the website.
+
+1.4 Forum Participation
+    - Registered users can participate in forum discussions:
+      start new topics, comment on, and react to ongoing discussions.
+
+1.5 Buddy Requests
+    - A registered user can send a "BUDDY REQUEST" to another registered
+      user.
+    - The recipient receives a request NOTIFICATION and can ACCEPT or
+      REJECT it.
+
+1.6 Buddy List & Feed Visibility
+    - Accepted buddies appear in each other's "Buddy List" on their
+      profiles.
+    - Once buddies, all posts of both users become visible to each other
+      (Facebook-style friend feed).
+
+--------------------------------------------------------------------------------
+MODULE 2 — RECIPE MANAGEMENT
+--------------------------------------------------------------------------------
+2.1 Recipe Posting
+    - Registered users post recipes via a dedicated page titled
+      "Post a New Recipe".
+
+2.2 Recipe Post Page — Sections (in order):
+
+    SECTION 1 — Basic Details
+      - Recipe Name ........................ MANDATORY
+      - Main Picture of the Recipe ......... MANDATORY
+      - Short Description / Story .......... OPTIONAL
+
+    SECTION 2 — Ingredients
+      - Ingredients with quantities.
+      - Autocomplete: typing the first 3 letters of an ingredient shows
+        matches from the master ingredient list.
+      - If not found, the user can type a new ingredient name in the same
+        box; it is added to the master list and becomes selectable by ALL
+        users for future recipe posts.
+      - The same autocomplete + add-new-to-master-list behavior applies
+        to: Category, Cuisine Type, and Origin fields.
+
+    SECTION 3 — General Information (OPTIONAL)
+      - Category, Cuisine Type, Origin.
+
+    SECTION 4 — Step-by-Step Method
+      - Users add steps one by one ("Add Step" for each next step).
+      - Each step has an OPTIONAL media upload (picture or short video).
+
+    SECTION 5 — Extras (OPTIONAL)
+      - Overall verdict / hidden information / special instructions /
+        trivia related to the recipe.
+
+    SECTION 6 — "Post Recipe" button.
+
+--------------------------------------------------------------------------------
+MODULE 3 — FORUM SECTION
+--------------------------------------------------------------------------------
+3.1 Forum Board
+    - Registered users have a forum board where they can:
+      - Start a new FOOD topic (choose from predefined topics or add a
+        new one).
+      - Comment on and react to existing/ongoing forum discussions.
+
+3.2 Reference
+    - Use https://www.plattershare.com ONLY as a reference for website
+      flow. Do NOT copy any data, design, or content from that site.
+
+--------------------------------------------------------------------------------
+DELIVERY & DEPLOYMENT REQUIREMENTS
+--------------------------------------------------------------------------------
+- Fully professional, polished, and directly publishable website.
+- Complete database integration (schema, migrations/SQL, seed data as
+  needed).
+- All parameters/configuration required to publish on an EXISTING
+  Hostinger.com hosting account (deployment instructions, environment
+  configuration, file structure compatible with Hostinger hosting).
+
+--------------------------------------------------------------------------------
+PROCESS INSTRUCTION
+--------------------------------------------------------------------------------
+- Before building, ask clarifying questions until you are 99% sure about
+  the requirements, then proceed with implementation.
+================================================================================

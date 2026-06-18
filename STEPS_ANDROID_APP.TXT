@@ -1,0 +1,68 @@
+================================================================================
+ BOSKET'S ALIMENTOS — ANDROID APP (companion to STEPS_TO_RUN_INSTALL_PUBLISH)
+ The app shares the SAME DATABASE as the website — one backend, instant sync.
+================================================================================
+
+  Project ............. D:\Ketul\Claude_Projects\BosketsAlimentosAndroid
+  Installable APK ..... BosketsAlimentos-v1.0.1.apk  (in the project root)
+  Publisher/Owner ..... Team Bosket's Alimentos (signing cert + manifest)
+  Supports ............ Android 7.0 (API 24) up to Android 14+
+  Full guide .......... ANDROID-APP-README.md (in the Android project)
+
+INSTALL ON A PHONE
+------------------
+  Copy the APK to the phone (USB / Drive / WhatsApp-to-self) -> tap it ->
+  allow "install from this source" -> Install.
+
+CONNECT THE APP TO THE SITE
+---------------------------
+  First launch asks for the server address:
+
+    Local testing : 192.168.0.104:8088
+        - your PC's Wi-Fi IP; phone must be on the same Wi-Fi
+        - on the PC run:  php -S 0.0.0.0:8088  (plus MariaDB — the
+          START-LOCAL-TESTING.bat launcher starts both)
+        - allow PHP through Windows Firewall on Private networks
+        - v1.0.1 understands plain IPs as http:// automatically
+
+    After go-live : https://yourdomain.com
+
+  Change it anytime: offline screen -> "Change server address".
+  No rebuild is ever needed to change servers.
+
+WHY IT SYNCS INSTANTLY
+----------------------
+  The app renders the live website inside a native Android shell — one
+  database, one backend. Log in on the phone, post a recipe or update your
+  profile, and it is on the website at that same moment, and vice versa.
+
+NATIVE FEATURES IN THE SHELL
+----------------------------
+  Branded splash + adaptive seal icon, pull-to-refresh, camera/gallery
+  uploads, Android download manager, WhatsApp/Facebook/X share intents,
+  persistent login, natural back-button navigation, offline screen with
+  retry, and background notification polling (~30 min) that opens the
+  notifications page when tapped.
+
+REBUILD (after any change)
+--------------------------
+  $env:JAVA_HOME    = 'D:\Ketul\AndroidBuildTools\jdk17'
+  $env:ANDROID_HOME = 'D:\Ketul\AndroidBuildTools\sdk'
+  & 'D:\Ketul\AndroidBuildTools\gradle\bin\gradle.bat' `
+      -p 'D:\Ketul\Claude_Projects\BosketsAlimentosAndroid' assembleRelease
+
+  Output: app\build\outputs\apk\release\app-release.apk
+  (bump versionCode/versionName in app\build.gradle.kts for each release)
+
+SIGNING KEY — BACK IT UP
+------------------------
+  boskets-release.keystore  (alias: boskets, password: Boskets@Key2026)
+  in the Android project root. Every future update must be signed with this
+  same key, or users must uninstall/reinstall. Keep a copy off this PC.
+
+GOOGLE PLAY LATER (optional)
+----------------------------
+  Build an AAB with:  gradle bundleRelease
+  Needs: Play developer account ($25 one-time) as "Team Bosket's Alimentos",
+  a privacy-policy URL (a simple page on the website works), screenshots.
+================================================================================

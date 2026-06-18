@@ -1,0 +1,199 @@
+================================================================================
+ BOSKET'S ALIMENTOS — STEPS TO RUN, TEST, CHECK DATABASE & PUBLISH
+ (A world of truly fusion food · 100% Veg)
+ Last updated: 11 June 2026 — all 36 end-to-end checks passing
+================================================================================
+
+
+--------------------------------------------------------------------------------
+ 1. RUN THE SITE LOCALLY IN YOUR BROWSER
+--------------------------------------------------------------------------------
+
+QUICK START (one double-click)
+------------------------------
+Run this file:
+
+    D:\Ketul\Claude_Projects\BosketsAlimentosTools\START-LOCAL-TESTING.bat
+
+It automatically:
+  - starts the MariaDB database server (if not already running)
+  - starts the website server on port 8088
+  - starts the Adminer database GUI on port 8089
+  - opens both browser tabs for you
+
+The servers run as MINIMIZED WINDOWS on your taskbar.
+Close those windows when you are done testing.
+
+URLS
+----
+  Website ............ http://127.0.0.1:8088
+  Database GUI ....... http://127.0.0.1:8089/adminer.php
+
+WHAT IS RUNNING UNDER THE HOOD (manual start, if ever needed)
+-------------------------------------------------------------
+  1. Database:
+     "C:\Program Files\MariaDB 12.3\bin\mariadbd.exe"
+         --defaults-file="C:\Program Files\MariaDB 12.3\data\my.ini"
+  2. Website:
+     php -S 127.0.0.1:8088 -t D:\Ketul\Claude_Projects\BosketsAlimentosWebSite
+  3. Adminer:
+     php -S 127.0.0.1:8089 -t D:\Ketul\Claude_Projects\BosketsAlimentosTools
+
+
+--------------------------------------------------------------------------------
+ 2. TEST ACCOUNTS
+--------------------------------------------------------------------------------
+
+  ROLE         USERNAME                                   PASSWORD
+  -----------  -----------------------------------------  ------------
+  Admin        admin                                      Admin@12345
+  Demo member  maya_fusion                                Demo@1234
+  Demo member  leo_cocina / sakura_spice / arjun_tadka    Demo@1234
+
+  Admin Panel: sign in as admin -> avatar menu -> Admin Panel.
+
+
+--------------------------------------------------------------------------------
+ 3. SUGGESTED THOROUGH TEST CHECKLIST
+--------------------------------------------------------------------------------
+
+TIP: open a normal browser window as one user and a PRIVATE/INCOGNITO window
+as another user — then you can watch buddy requests and notifications arrive
+in real time between the two.
+
+  [ ] Register a brand-new account (email + password, optional avatar <= 5 MB)
+  [ ] Edit profile, change password, try account deletion (Settings page)
+  [ ] "Forgot your password?" link on Sign In page
+      NOTE: the reset EMAIL cannot be delivered on a local Windows PC
+      (no mail server). The flow itself is fully tested and will work
+      on Hostinger after you set MAIL_FROM in config.php.
+  [ ] Post a New Recipe:
+      - Section 1: name + main picture (both mandatory) + story
+      - Section 2: type 3 letters of an ingredient -> suggestions appear;
+        type a NEW ingredient -> it is added to the master list for everyone
+      - Section 3: category / cuisine / origin (same typeahead behaviour)
+      - Section 4: add several steps, attach a photo or short video to a step
+      - Section 5: verdict / trivia, then Post Recipe
+  [ ] React (like/love/yum/wow), comment and share a recipe
+      (share = repost to your wall + WhatsApp / Facebook / X / copy link)
+  [ ] Post a food story (text + photo) on your own wall
+  [ ] Send a BUDDY REQUEST from window A; watch the bell notification in
+      window B; accept it; confirm both buddy lists update
+  [ ] Check "My Feed" now shows the buddy's wall posts and recipes
+  [ ] Confirm a NON-buddy cannot see your wall (buddies-only lock screen)
+  [ ] Forum: start a new topic on an existing board; create a NEW board;
+      reply and react on someone else's topic
+  [ ] Notifications page: click each notification — it should land on the
+      right recipe / wall post / topic / buddy page
+  [ ] Admin Panel: feature a recipe (star on homepage), hide a comment,
+      ban/unban a user, rename a master-list ingredient
+  [ ] Mobile view: resize the browser window narrow — header collapses to
+      the hamburger menu
+
+
+--------------------------------------------------------------------------------
+ 4. CHECKING THE DATABASE
+--------------------------------------------------------------------------------
+
+OPTION A — ADMINER (graphical, easiest)
+---------------------------------------
+  1. Open  http://127.0.0.1:8089/adminer.php
+  2. Log in with:
+       System ....... MySQL
+       Server ....... 127.0.0.1
+       Username ..... boskets
+       Password ..... Boskets@Local1
+       Database ..... boskets
+  3. Click any table -> "Select data" to browse rows, edit values,
+     or use the "SQL command" link to run your own queries.
+
+OPTION B — COMMAND LINE (quick)
+-------------------------------
+  In PowerShell:
+
+    & 'C:\Program Files\MariaDB 12.3\bin\mariadb.exe' -u boskets -pBoskets@Local1 boskets
+
+  Example queries:
+    SELECT id, username, email, created_at FROM users;
+    SELECT id, title, status FROM recipes ORDER BY created_at DESC;
+    SELECT * FROM buddies;
+    SELECT * FROM notifications ORDER BY id DESC LIMIT 20;
+  Type  exit  to leave.
+
+THE 16 TABLES
+-------------
+  users ................ member accounts (admin flag, ban flag, avatar)
+  buddies .............. buddy requests + accepted/rejected status
+  recipes .............. recipe header (title, image, story, verdict...)
+  recipe_ingredients ... ingredients + quantities per recipe
+  recipe_steps ......... step-by-step method incl. optional media
+  ingredients .......... MASTER LIST — grows as users type new ones
+  categories ........... MASTER LIST (recipe categories)
+  cuisines ............. MASTER LIST (cuisine types)
+  origins .............. MASTER LIST (recipe origins)
+  wall_posts ........... food stories + shared recipes on member walls
+  forum_categories ..... forum boards (predefined + user-created)
+  forum_topics ......... forum discussions
+  comments ............. comments on recipes / wall posts / topics
+  reactions ............ like / love / yum / wow on all content
+  notifications ........ bell notifications
+  password_resets ...... forgot-password tokens (1-hour expiry)
+
+
+--------------------------------------------------------------------------------
+ 5. PUBLISHING TO HOSTINGER (summary — full guide in README-DEPLOY.md)
+--------------------------------------------------------------------------------
+
+  1. hPanel -> Databases -> MySQL Databases:
+     create a database + user + strong password (note all three).
+
+  2. Edit config.php — REPLACE the LOCAL TEST values:
+       DB_HOST  -> 'localhost'
+       DB_NAME  -> your Hostinger database name  (u123456789_xxxx)
+       DB_USER  -> your Hostinger database user
+       DB_PASS  -> your Hostinger database password
+     Optional but recommended:
+       SITE_URL  -> 'https://yourdomain.com'
+       MAIL_FROM -> a mailbox on your domain (hPanel -> Emails),
+                    used for password-reset emails.
+
+  3. Upload ALL files from the website folder into public_html
+     (File Manager zip-upload or FTP). Make sure public_html/index.php exists.
+     DO NOT upload anything from the BosketsAlimentosTools folder
+     (adminer.php must never go on the live server).
+
+  4. Open  https://yourdomain.com/install.php  -> create your admin account,
+     choose whether to seed demo content -> Install.
+
+  5. DELETE install.php from the server immediately afterwards.
+
+  6. hPanel -> Security -> SSL: install the free certificate + Force HTTPS.
+
+  7. hPanel -> Advanced -> PHP Configuration: PHP 8.1+,
+     upload_max_filesize 30M, post_max_size 64M.
+
+  8. SEO finishing touches:
+     - put your absolute sitemap URL in robots.txt:
+         Sitemap: https://yourdomain.com/sitemap.php
+     - submit that URL in Google Search Console.
+
+  On the live server, the database is managed via
+  hPanel -> Databases -> phpMyAdmin (same tables as listed above).
+
+
+--------------------------------------------------------------------------------
+ KEY LOCAL FILES & CREDENTIALS AT A GLANCE
+--------------------------------------------------------------------------------
+
+  Website folder ....... D:\Ketul\Claude_Projects\BosketsAlimentosWebSite
+  Tools folder ......... D:\Ketul\Claude_Projects\BosketsAlimentosTools
+  Launcher ............. START-LOCAL-TESTING.bat   (in the tools folder)
+  Site URL ............. http://127.0.0.1:8088
+  DB GUI URL ........... http://127.0.0.1:8089/adminer.php
+  Local DB ............. boskets @ 127.0.0.1:3306  (boskets / Boskets@Local1)
+  Local admin .......... admin / Admin@12345
+  Demo users ........... Demo@1234
+  Master prompt ........ PROMPT.TXT
+  Deploy guide ......... README-DEPLOY.md
+
+================================================================================

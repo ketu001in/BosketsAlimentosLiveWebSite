@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-label="Bosket's Alimentos — artisan seal logo">
+  <title>Bosket's Alimentos — artisan seal</title>
+  <desc>BA monogram inside a fine double ring with a leaf, above the wordmark. Coastal mint palette.</desc>
+  <g>
+    <circle cx="120" cy="110" r="104" fill="none" stroke="#23756a" stroke-width="5"/>
+    <circle cx="120" cy="110" r="88" fill="none" stroke="#23756a" stroke-width="1.8" stroke-dasharray="4 9"/>
+    <text x="92" y="136" font-family="'Playfair Display', Georgia, serif" font-size="76" fill="#23756a" text-anchor="middle">B</text>
+    <text x="146" y="136" font-family="'Playfair Display', Georgia, serif" font-size="76" fill="#1e3833" text-anchor="middle">A</text>
+    <path d="M120 150 C113 158 113 167 120 175 C127 167 127 158 120 150 Z" fill="#3fa796"/>
+    <path d="M100 64 C109 57 131 57 140 64" fill="none" stroke="#3fa796" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="120" y="252" font-family="'Playfair Display', Georgia, serif" font-size="27" fill="#1e3833" text-anchor="middle" letter-spacing="1.5">BOSKET'S ALIMENTOS</text>
+  <text x="120" y="278" font-family="Inter, system-ui, sans-serif" font-size="11.5" fill="#62736d" text-anchor="middle" letter-spacing="3.2">A WORLD OF TRULY FUSION FOOD</text>
+</svg>

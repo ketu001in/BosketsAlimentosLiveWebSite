@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /includes/
+Disallow: /settings.php
+Disallow: /notifications.php
+Disallow: /feed.php
+Disallow: /buddies.php
+Disallow: /messages.php
+Disallow: /wall-post.php
+Disallow: /forgot-password.php
+Disallow: /reset-password.php
+Disallow: /oauth.php
+Disallow: /link-account.php
+Disallow: /install.php
+
+# Sitemap (replace with your real domain after deployment)
+Sitemap: /sitemap.php
