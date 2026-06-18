@@ -156,7 +156,7 @@ h1, h2, h3 { font-family: var(--font-display); color: var(--green-900); line-hei
 .nav-item .caret { font-size: 9px; color: var(--ink-soft); transition: transform .15s; }
 .nav-item:hover .caret { transform: rotate(180deg); color: var(--green-700); }
 .mega {
-  display: none; position: absolute; left: 50%; transform: translateX(-50%); top: calc(100% + 16px);
+  display: none; position: absolute; left: 0; transform: none; top: calc(100% + 16px);
   background: var(--white); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-lg);
   padding: 24px 28px 20px; z-index: 90; min-width: 580px;
   grid-template-columns: repeat(3, 1fr); gap: 4px 30px;
@@ -496,6 +496,9 @@ table.data tr:hover td { background: var(--green-50); }
 @media (max-width: 900px) {
   .nav-toggle { display: block; margin-left: auto; }
   .header-inner { flex-wrap: wrap; }
+  /* Allow the sticky header to scroll internally when the mobile menu is open
+     so accordion content taller than the viewport remains reachable. */
+  body.nav-open .site-header { max-height: 100vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   /* tap ☰ to expand: actions + menu push the page down (no broken overlay).
      Use .header-inner .nav-actions (same 0,2,0 spec as the desktop !important
      rule) so these !important values win by source-order inside the media query. */
