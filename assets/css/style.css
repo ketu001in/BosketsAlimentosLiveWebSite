@@ -140,6 +140,11 @@ h1, h2, h3 { font-family: var(--font-display); color: var(--green-900); line-hei
   border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg);
   min-width: 195px; padding: 8px; z-index: 50;
 }
+/* Invisible bridge covers the 8px gap so moving the mouse from the avatar
+   into the dropdown does not break the :hover and collapse the menu. */
+.nav-dropdown::before {
+  content: ''; position: absolute; top: -8px; left: 0; right: 0; height: 8px;
+}
 .nav-dropdown a { display: block; padding: 9px 13px; border-radius: 8px; color: var(--ink); font-size: 14px; }
 .nav-dropdown a:hover { background: var(--green-50); color: var(--green-700); }
 .nav-user:hover .nav-dropdown, .nav-user:focus-within .nav-dropdown { display: block; }
