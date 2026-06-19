@@ -14,6 +14,7 @@ function admin_nav(string $active): void
         'masters'  => ['masters.php',          'Master Lists'],
         'messages' => ['messages.php',         'Messages'],
         'import'   => ['import-blogspot.php',  'Import'],
+        'repair'   => ['repair-images.php',    'Repair Images'],
     ];
     echo '<div class="admin-nav">';
     foreach ($items as $key => [$href, $label]) {
