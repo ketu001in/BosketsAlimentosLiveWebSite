@@ -301,7 +301,7 @@ input[type=file] { margin-top: 6px; font-size: 14px; }
 /* ----------------------------- Recipe page */
 .recipe-hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 30px; align-items: start; }
 .recipe-hero-img { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); aspect-ratio: 4/3; background: var(--green-100); }
-.recipe-hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+.recipe-hero-img img { width: 100%; height: 100%; object-fit: contain; display: block; cursor: zoom-in; }
 /* Lightbox overlay for full-size recipe image */
 .recipe-img-lb { display: flex; visibility: hidden; opacity: 0; pointer-events: none; position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 9000; align-items: center; justify-content: center; cursor: zoom-out; transition: opacity .28s ease, visibility .28s ease; }
 .recipe-img-lb.open { visibility: visible; opacity: 1; pointer-events: auto; }
