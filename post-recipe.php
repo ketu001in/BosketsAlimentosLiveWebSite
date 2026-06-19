@@ -215,6 +215,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['delete_id'])) {
 
             $pdo->commit();
             flash('success', $editId ? 'Recipe updated! 🌟' : 'Your recipe is live! 🎉 Share it with your buddies.');
+            // Send email notifications for new recipes only
+            if (!$editId) {
+                send_recipe_notification_emails($recipeId, $uid);
+            }
             redirect('recipe.php?id=' . $recipeId);
         } catch (RuntimeException $ex) {
             $pdo->rollBack();

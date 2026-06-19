@@ -14,5 +14,6 @@ Disallow: /reset-password.php
 Disallow: /oauth.php
 Disallow: /link-account.php
 Disallow: /install.php
+Disallow: /unsubscribe.php
 
 Sitemap: https://www.bosketsalimentos.com/sitemap.php

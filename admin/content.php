@@ -2,6 +2,8 @@
 /** Admin: recipes (feature/remove/delete), wall posts and comments moderation. */
 require_once __DIR__ . '/_admin.php';
 
+ensure_star_recipe_table();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
     $action = $_POST['action'] ?? '';
@@ -9,6 +11,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdo = db();
 
     switch ($action) {
+        case 'set_star':
+            $pdo->prepare("UPDATE star_recipe SET recipe_id=?, mode='manual', updated_at=NOW(), updated_by=? WHERE id=1")
+                ->execute([$id, $admin['id']]);
+            flash('success', '⭐ Star Recipe updated.');
+            break;
+        case 'star_settings':
+            $label = mb_substr(trim($_POST['star_label'] ?? 'Star Recipe'), 0, 60) ?: 'Star Recipe';
+            $mode  = ($_POST['star_mode'] ?? 'auto') === 'manual' ? 'manual' : 'auto';
+            $pdo->prepare("UPDATE star_recipe SET label=?, mode=?, updated_at=NOW(), updated_by=? WHERE id=1")
+                ->execute([$label, $mode, $admin['id']]);
+            flash('success', 'Star Recipe settings saved.');
+            break;
         case 'feature':
         case 'unfeature':
             $pdo->prepare('UPDATE recipes SET is_featured = ? WHERE id = ?')
@@ -50,6 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/content.php');
 }
 
+$starCfg  = db()->query("SELECT * FROM star_recipe WHERE id = 1")->fetch();
+$starRecipeId = (int)($starCfg['recipe_id'] ?? 0);
+
 $recipes = db()->query(
     "SELECT r.id, r.title, r.status, r.is_featured, r.views, r.created_at, u.username
        FROM recipes r JOIN users u ON u.id = r.user_id ORDER BY r.created_at DESC LIMIT 150"
@@ -67,6 +84,35 @@ include dirname(__DIR__) . '/includes/header.php';
   <h1>🍲 Content Moderation</h1>
   <?php admin_nav('content'); ?>
 
+  <!-- Star Recipe Settings -->
+  <div class="panel" style="border-left:4px solid #ffd700">
+    <h3>⭐ Star Recipe Settings</h3>
+    <form method="post" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+      <?= csrf_field() ?>
+      <input type="hidden" name="action" value="star_settings">
+      <label class="field" style="min-width:200px;margin:0">Label text
+        <input type="text" name="star_label" maxlength="60" value="<?= e($starCfg['label'] ?? 'Star Recipe') ?>" placeholder="e.g. Recipe of the Week">
+      </label>
+      <label class="field" style="margin:0">Mode
+        <select name="star_mode">
+          <option value="auto"   <?= ($starCfg['mode'] ?? 'auto') === 'auto'   ? 'selected' : '' ?>>Auto (highest score this week)</option>
+          <option value="manual" <?= ($starCfg['mode'] ?? 'auto') === 'manual' ? 'selected' : '' ?>>Manual (I pick it below)</option>
+        </select>
+      </label>
+      <button class="btn btn-primary btn-sm" type="submit">Save Settings</button>
+    </form>
+    <?php if ($starRecipeId): ?>
+      <p class="muted small" style="margin-top:10px">Currently set: recipe #<?= $starRecipeId ?>
+        <?php
+          $curStar = db()->prepare("SELECT title FROM recipes WHERE id = ?");
+          $curStar->execute([$starRecipeId]);
+          $curStarTitle = $curStar->fetchColumn();
+          if ($curStarTitle) echo '— <strong>' . e($curStarTitle) . '</strong>';
+        ?>
+      </p>
+    <?php endif; ?>
+  </div>
+
   <div class="panel">
     <h3>Recipes</h3>
     <div class="table-wrap">
@@ -75,7 +121,8 @@ include dirname(__DIR__) . '/includes/header.php';
       <?php foreach ($recipes as $r): ?>
         <tr>
           <td><a href="<?= e(url('recipe.php?id=' . (int)$r['id'])) ?>"><?= e($r['title']) ?></a>
-              <?php if ($r['is_featured']): ?><span class="pill pill-orange">★ featured</span><?php endif; ?></td>
+              <?php if ($r['is_featured']): ?><span class="pill pill-orange">★ featured</span><?php endif; ?>
+              <?php if ((int)$r['id'] === $starRecipeId): ?><span class="pill" style="background:#ffd700;color:#5a4000">⭐ Star</span><?php endif; ?></td>
           <td class="small">@<?= e($r['username']) ?></td>
           <td><?= (int)$r['views'] ?></td>
           <td><?= $r['status'] === 'published' ? '<span class="pill pill-green">live</span>' : '<span class="pill pill-red">hidden</span>' ?></td>
@@ -86,7 +133,10 @@ include dirname(__DIR__) . '/includes/header.php';
               <?php if ($r['is_featured']): ?>
                 <button class="btn btn-sm btn-ghost" name="action" value="unfeature">Un-feature</button>
               <?php else: ?>
-                <button class="btn btn-sm btn-ghost" name="action" value="feature">⭐ Feature</button>
+                <button class="btn btn-sm btn-ghost" name="action" value="feature">Feature</button>
+              <?php endif; ?>
+              <?php if ((int)$r['id'] !== $starRecipeId): ?>
+                <button class="btn btn-sm btn-ghost" name="action" value="set_star" style="color:#b08000;border-color:#e0c040">⭐ Set Star</button>
               <?php endif; ?>
               <?php if ($r['status'] === 'published'): ?>
                 <button class="btn btn-sm btn-ghost" name="action" value="remove_recipe">Hide</button>

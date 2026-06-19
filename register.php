@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/includes/oauth.php';
+ensure_email_notify_columns();
 
 if (is_logged_in()) {
     redirect('index.php');
@@ -47,7 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $avatar = null;
+        $avatar      = null;
+        $emailNotify = !empty($_POST['email_notify']) ? 1 : 0;
+        $emailToken  = bin2hex(random_bytes(32));
         try {
             $up = handle_upload('avatar', 'image', 'avatars');
             $avatar = $up['file'] ?? null;
@@ -56,13 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (!$errors) {
             $st = db()->prepare(
-                'INSERT INTO users (username, email, password_hash, display_name, avatar, created_at)
-                 VALUES (?, ?, ?, ?, ?, NOW())'
+                'INSERT INTO users (username, email, password_hash, display_name, avatar, email_notify, email_token, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
             );
             $st->execute([
                 $old['username'], $old['email'],
                 password_hash($password, PASSWORD_DEFAULT),
                 $old['display_name'], $avatar,
+                $emailNotify, $emailToken,
             ]);
             $_SESSION['user_id'] = (int)db()->lastInsertId();
             session_regenerate_id(true);
@@ -101,6 +105,10 @@ include __DIR__ . '/includes/header.php';
       </div>
       <label class="field">Profile picture <small>Optional — your avatar or a real photo, max 5 MB (JPG/PNG/WEBP/GIF)</small>
         <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif">
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px;color:var(--ink-soft)">
+        <input type="checkbox" name="email_notify" value="1" style="margin-top:3px;flex-shrink:0" <?= !empty($_POST['email_notify']) ? 'checked' : '' ?>>
+        <span>Email me when new recipes are posted or my buddies share something delicious 🍽️ <small>(you can unsubscribe anytime)</small></span>
       </label>
       <button class="btn btn-primary btn-block" type="submit">🌿 Join <?= e(SITE_NAME) ?></button>
     </form>

@@ -255,6 +255,173 @@ function mins_to_iso8601(int $mins): string
     return 'PT' . ($h ? $h . 'H' : '') . ($m ? $m . 'M' : '');
 }
 
+// ─── Star Recipe ─────────────────────────────────────────────────────────────
+
+/** star_recipe settings table (one row, id=1). */
+function ensure_star_recipe_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    db()->exec("CREATE TABLE IF NOT EXISTS star_recipe (
+        id TINYINT UNSIGNED NOT NULL DEFAULT 1,
+        recipe_id INT UNSIGNED NULL,
+        label VARCHAR(60) NOT NULL DEFAULT 'Star Recipe',
+        mode ENUM('auto','manual') NOT NULL DEFAULT 'auto',
+        updated_at DATETIME NULL,
+        updated_by INT UNSIGNED NULL,
+        PRIMARY KEY (id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    db()->exec("INSERT IGNORE INTO star_recipe (id) VALUES (1)");
+}
+
+/** Return the current star recipe with full recipe data (or null if none). */
+function get_star_recipe(): ?array
+{
+    ensure_star_recipe_table();
+    $cfg = db()->query("SELECT * FROM star_recipe WHERE id = 1")->fetch();
+    if (!$cfg) return null;
+
+    if ($cfg['mode'] === 'manual' && $cfg['recipe_id']) {
+        $st = db()->prepare(
+            "SELECT r.*, u.username, u.display_name, u.avatar,
+                    c.name AS category_name, cu.name AS cuisine_name
+               FROM recipes r JOIN users u ON u.id = r.user_id
+          LEFT JOIN categories c  ON c.id  = r.category_id
+          LEFT JOIN cuisines   cu ON cu.id = r.cuisine_id
+              WHERE r.id = ? AND r.status = 'published'"
+        );
+        $st->execute([$cfg['recipe_id']]);
+        $rec = $st->fetch();
+    } else {
+        $rec = db()->query(
+            "SELECT r.*, u.username, u.display_name, u.avatar,
+                    c.name AS category_name, cu.name AS cuisine_name,
+                    ((SELECT COUNT(*) FROM reactions x
+                        WHERE x.target_type='recipe' AND x.target_id = r.id
+                          AND x.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) * 3
+                     + r.views / 10) AS star_score
+               FROM recipes r JOIN users u ON u.id = r.user_id
+          LEFT JOIN categories c  ON c.id  = r.category_id
+          LEFT JOIN cuisines   cu ON cu.id = r.cuisine_id
+              WHERE r.status = 'published'
+           ORDER BY star_score DESC, r.created_at DESC LIMIT 1"
+        )->fetch();
+    }
+
+    if (!$rec) return null;
+    $rec['star_label'] = $cfg['label'];
+    $rec['star_mode']  = $cfg['mode'];
+    return $rec;
+}
+
+// ─── Email notifications ──────────────────────────────────────────────────────
+
+/** Add email_notify + email_token columns to users table. */
+function ensure_email_notify_columns(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    if (!db()->query("SHOW COLUMNS FROM users LIKE 'email_notify'")->fetch()) {
+        db()->exec("ALTER TABLE users ADD COLUMN email_notify TINYINT(1) NOT NULL DEFAULT 0 AFTER is_banned");
+    }
+    if (!db()->query("SHOW COLUMNS FROM users LIKE 'email_token'")->fetch()) {
+        db()->exec("ALTER TABLE users ADD COLUMN email_token VARCHAR(64) NULL AFTER email_notify");
+    }
+}
+
+/** Generate a unique unsubscribe token for a user (idempotent). */
+function ensure_email_token(int $userId): string
+{
+    ensure_email_notify_columns();
+    $st = db()->prepare("SELECT email_token FROM users WHERE id = ?");
+    $st->execute([$userId]);
+    $tok = $st->fetchColumn();
+    if ($tok) return $tok;
+    $tok = bin2hex(random_bytes(32));
+    db()->prepare("UPDATE users SET email_token = ? WHERE id = ?")->execute([$tok, $userId]);
+    return $tok;
+}
+
+/**
+ * Send recipe notification emails.
+ * Admin posts  → all subscribed users.
+ * User posts   → subscribed accepted buddies.
+ */
+function send_recipe_notification_emails(int $recipeId, int $authorId): void
+{
+    ensure_email_notify_columns();
+
+    $st = db()->prepare("SELECT r.title, r.image, r.story FROM recipes r WHERE r.id = ?");
+    $st->execute([$recipeId]);
+    $recipe = $st->fetch();
+    if (!$recipe) return;
+
+    $adminSt = db()->prepare("SELECT is_admin FROM users WHERE id = ?");
+    $adminSt->execute([$authorId]);
+    $isAdmin = (bool)$adminSt->fetchColumn();
+
+    if ($isAdmin) {
+        $rows = db()->query(
+            "SELECT id, email, display_name, email_token FROM users
+              WHERE email_notify = 1 AND email_token IS NOT NULL AND id != $authorId"
+        )->fetchAll();
+    } else {
+        $st = db()->prepare(
+            "SELECT u.id, u.email, u.display_name, u.email_token
+               FROM users u
+               JOIN buddies b ON (b.requester_id = u.id AND b.addressee_id = ?)
+                              OR (b.addressee_id = u.id AND b.requester_id = ?)
+              WHERE b.status = 'accepted'
+                AND u.email_notify = 1 AND u.email_token IS NOT NULL"
+        );
+        $st->execute([$authorId, $authorId]);
+        $rows = $st->fetchAll();
+    }
+
+    if (!$rows) return;
+
+    $siteName  = defined('SITE_NAME') ? SITE_NAME : "Bosket's Alimentos";
+    $from      = (defined('MAIL_FROM') && MAIL_FROM) ? MAIL_FROM : 'noreply@bosketsalimentos.com';
+    $recipeUrl = base_url() . '/recipe.php?id=' . $recipeId;
+    $imgUrl    = $recipe['image'] ? base_url() . '/' . ltrim($recipe['image'], '/') : '';
+    $excerpt   = mb_strimwidth(strip_tags(trim($recipe['story'] ?? '')), 0, 180, '…');
+    $subject   = ($isAdmin ? 'New recipe on ' . $siteName : 'Your buddy posted a new recipe') . ': ' . $recipe['title'];
+
+    foreach ($rows as $u) {
+        $unsubUrl = base_url() . '/unsubscribe.php?token=' . urlencode($u['email_token']);
+        $name     = htmlspecialchars($u['display_name'] ?: 'there');
+        $body     = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+                  . '<body style="margin:0;padding:20px;background:#f0f4f2;font-family:Arial,Helvetica,sans-serif">'
+                  . '<div style="max-width:580px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10)">'
+                  . '<div style="background:linear-gradient(135deg,#1b4b43,#3fa796);padding:26px 30px">'
+                  . '<span style="color:#fff;font-size:20px;font-weight:700">' . htmlspecialchars($siteName) . '</span>'
+                  . '<span style="color:rgba(255,255,255,.7);font-size:13px;margin-left:10px">100% vegetarian fusion</span>'
+                  . '</div>'
+                  . ($imgUrl ? '<img src="' . htmlspecialchars($imgUrl) . '" alt="" style="width:100%;height:210px;object-fit:cover;display:block">' : '')
+                  . '<div style="padding:26px 30px">'
+                  . '<p style="margin:0 0 6px;color:#555">Hi ' . $name . ',</p>'
+                  . '<p style="margin:0 0 16px;color:#333">' . ($isAdmin ? 'A brand new recipe is now live on ' . htmlspecialchars($siteName) . ':' : 'One of your buddies just shared a new recipe:') . '</p>'
+                  . '<h2 style="margin:0 0 10px;color:#1b4b43;font-size:22px">' . htmlspecialchars($recipe['title']) . '</h2>'
+                  . ($excerpt ? '<p style="margin:0 0 22px;color:#555;line-height:1.65;font-size:15px">' . htmlspecialchars($excerpt) . '</p>' : '')
+                  . '<a href="' . htmlspecialchars($recipeUrl) . '" style="display:inline-block;background:#3fa796;color:#fff;text-decoration:none;padding:13px 30px;border-radius:8px;font-weight:700;font-size:15px">View Recipe →</a>'
+                  . '</div>'
+                  . '<div style="padding:14px 30px;background:#f8faf9;border-top:1px solid #e8eeec;font-size:12px;color:#999">'
+                  . 'You subscribed to recipe notifications on ' . htmlspecialchars($siteName) . '. '
+                  . '<a href="' . htmlspecialchars($unsubUrl) . '" style="color:#3fa796">Unsubscribe</a>'
+                  . '</div></div></body></html>';
+
+        $headers = implode("\r\n", [
+            'MIME-Version: 1.0',
+            'Content-Type: text/html; charset=UTF-8',
+            'From: ' . $siteName . ' <' . $from . '>',
+            'Reply-To: ' . $from,
+        ]);
+        @mail($u['email'], $subject, $body, $headers);
+    }
+}
+
 /** One-to-one private messages between buddies. */
 function ensure_messages_table(): void
 {

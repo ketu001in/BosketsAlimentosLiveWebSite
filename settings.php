@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/includes/oauth.php';
 
 $me = require_login();
+ensure_email_notify_columns();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -77,6 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ->execute([$me['id'], $provider]);
             flash('success', ucfirst($provider) . ' sign-in disconnected.');
         }
+        redirect('settings.php');
+    }
+
+    if ($section === 'notifications') {
+        $notify = !empty($_POST['email_notify']) ? 1 : 0;
+        ensure_email_token((int)$me['id']);
+        db()->prepare("UPDATE users SET email_notify = ? WHERE id = ?")->execute([$notify, $me['id']]);
+        flash('success', $notify ? 'Email notifications enabled.' : 'Email notifications turned off.');
         redirect('settings.php');
     }
 
@@ -206,6 +215,23 @@ include __DIR__ . '/includes/header.php';
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
+
+  <div class="panel">
+    <h3>🔔 Email notifications</h3>
+    <p class="muted small">Receive an email when new recipes are posted or your buddies share something.</p>
+    <form method="post">
+      <?= csrf_field() ?>
+      <input type="hidden" name="section" value="notifications">
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;font-size:15px">
+        <input type="checkbox" name="email_notify" value="1" <?= ($me['email_notify'] ?? 0) ? 'checked' : '' ?>>
+        <span>Email me about new recipes and buddy activity</span>
+      </label>
+      <div style="margin-top:14px"><button class="btn btn-primary" type="submit">Save</button></div>
+    </form>
+    <?php if ($me['email_notify'] ?? 0): ?>
+      <p class="muted small" style="margin-top:10px">To stop receiving emails, uncheck the box above, or use the unsubscribe link in any notification email.</p>
+    <?php endif; ?>
+  </div>
 
   <div class="panel" style="border-color:#f3c1ba">
     <h3 style="color:var(--danger)">⚠️ Delete account</h3>

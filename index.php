@@ -42,10 +42,12 @@ $counts = [
     'topics'  => $pdo->query("SELECT COUNT(*) FROM forum_topics WHERE status='visible'")->fetchColumn(),
 ];
 
+$starRecipe = get_star_recipe();
+
 $pageTitle = 'Home';
 include __DIR__ . '/includes/header.php';
 ?>
-<section class="hero">
+<section class="hero<?= $starRecipe ? ' hero-compact' : '' ?>">
   <div class="container">
     <h1>A world of <em>truly fusion</em> food</h1>
     <p>Welcome to <?= e(SITE_NAME) ?> — a 100% vegetarian community where cuisines collide deliciously. Post recipes, swap food stories, debate in the forum and cook alongside your buddies.</p>
@@ -66,6 +68,42 @@ include __DIR__ . '/includes/header.php';
     </div>
   </div>
 </section>
+
+<?php if ($starRecipe): ?>
+<section class="star-recipe-section">
+  <div class="container">
+    <div class="star-recipe-inner">
+      <a class="star-recipe-img" href="<?= e(url('recipe.php?id=' . (int)$starRecipe['id'])) ?>">
+        <?php if ($starRecipe['image']): ?>
+          <img src="<?= e(url($starRecipe['image'])) ?>" alt="<?= e($starRecipe['title']) ?>">
+          <div class="star-recipe-bg-blur"><img src="<?= e(url($starRecipe['image'])) ?>" aria-hidden="true"></div>
+        <?php else: ?>
+          <div class="star-recipe-img-empty">🍳</div>
+        <?php endif; ?>
+      </a>
+      <div class="star-recipe-body">
+        <span class="star-badge">&#11088; <?= e($starRecipe['star_label']) ?></span>
+        <h2 class="star-recipe-title">
+          <a href="<?= e(url('recipe.php?id=' . (int)$starRecipe['id'])) ?>"><?= e($starRecipe['title']) ?></a>
+        </h2>
+        <?php
+          $starDesc = trim($starRecipe['story'] ?? '');
+          if ($starDesc && strtolower($starDesc) !== strtolower($starRecipe['title'])) {
+              echo '<p class="star-recipe-desc">' . e(mb_strimwidth(preg_replace('/\s+/', ' ', $starDesc), 0, 200, '…')) . '</p>';
+          }
+        ?>
+        <div class="star-recipe-meta">
+          <?php if ($starRecipe['category_name']): ?><span class="star-tag"><?= e($starRecipe['category_name']) ?></span><?php endif; ?>
+          <?php if ($starRecipe['cuisine_name']): ?><span class="star-tag"><?= e($starRecipe['cuisine_name']) ?></span><?php endif; ?>
+          <span class="star-tag">100% Veg</span>
+        </div>
+        <a class="btn btn-accent star-recipe-btn" href="<?= e(url('recipe.php?id=' . (int)$starRecipe['id'])) ?>">View Recipe →</a>
+        <p class="star-recipe-author">by <?= e($starRecipe['display_name'] ?: $starRecipe['username']) ?></p>
+      </div>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
 
 <?php if ($featured): ?>
 <section class="section">
