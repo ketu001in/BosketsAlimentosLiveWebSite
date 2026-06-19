@@ -53,7 +53,11 @@ include __DIR__ . '/includes/header.php';
 
   <div class="recipe-hero">
     <div class="recipe-hero-img">
-      <?php if ($r['image']): ?><img src="<?= e(url($r['image'])) ?>" alt="<?= e($r['title']) ?>"><?php endif; ?>
+      <?php if ($r['image']): ?>
+        <a href="<?= e(url($r['image'])) ?>" class="recipe-img-trigger" title="View full image">
+          <img src="<?= e(url($r['image'])) ?>" alt="<?= e($r['title']) ?>">
+        </a>
+      <?php endif; ?>
     </div>
     <div>
       <h1 class="recipe-title"><?= e($r['title']) ?></h1>
@@ -195,4 +199,40 @@ include __DIR__ . '/includes/header.php';
     <button class="btn btn-sm btn-outline" data-close-modal style="margin-top:18px">Close</button>
   </div>
 </div>
+<!-- Lightbox for recipe cover image -->
+<div class="recipe-img-lb" id="recipe-img-lb" role="dialog" aria-modal="true" aria-label="Full size image">
+  <button class="recipe-img-lb-close" id="recipe-img-lb-close" aria-label="Close">&times;</button>
+  <img src="" alt="">
+</div>
+<script>
+(function () {
+  var trigger = document.querySelector('.recipe-img-trigger');
+  if (!trigger) return;
+  var lb = document.getElementById('recipe-img-lb');
+  var lbImg = lb.querySelector('img');
+  trigger.addEventListener('click', function (e) {
+    e.preventDefault();
+    lbImg.src = trigger.href;
+    lbImg.alt = trigger.querySelector('img').alt;
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  });
+  lb.addEventListener('click', function (e) {
+    if (e.target !== lbImg) {
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+  document.getElementById('recipe-img-lb-close').addEventListener('click', function () {
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && lb.classList.contains('open')) {
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+}());
+</script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
