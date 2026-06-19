@@ -42,10 +42,16 @@ $isOwner  = $me && (int)$me['id'] === (int)$r['user_id'];
 $shareUrl = url('recipe.php?id=' . $id);
 $embed    = youtube_embed_html($r['youtube_url'] ?? null, $r['title']);
 
-$pageTitle = $r['title'];
-$pageDesc  = trim((string)$r['story']) !== ''
-    ? preg_replace('/\s+/', ' ', $r['story'])
-    : '100% veg fusion recipe on ' . SITE_NAME . ' by ' . ($r['display_name'] ?: $r['username']) . '.';
+$pageTitle  = $r['title'];
+$_story     = trim((string)$r['story']);
+// Use story if it's meaningful (not just the title repeated)
+$_storyText = ($_story !== '' && strtolower($_story) !== strtolower($r['title']))
+    ? preg_replace('/\s+/', ' ', $_story)
+    : '';
+$pageDesc = $_storyText !== ''
+    ? $_storyText
+    : 'Try this ' . ($r['category_name'] ?? 'delicious') . ' recipe — ' . e($r['title'])
+      . ' — a 100% vegetarian ' . ($r['cuisine_name'] ? $r['cuisine_name'] . ' ' : '') . 'recipe on ' . SITE_NAME . '.';
 $pageImage = $r['image'] ?: '';
 $ogType    = 'article';
 
@@ -76,6 +82,21 @@ $recipeSchema = [
 if ($r['image'])          $recipeSchema['image']          = [url($r['image'])];
 if ($r['category_name'])  $recipeSchema['recipeCategory'] = $r['category_name'];
 if ($r['cuisine_name'])   $recipeSchema['recipeCuisine']  = $r['cuisine_name'];
+
+// Video field — extract YouTube ID if present
+$_ytUrl = $r['youtube_url'] ?? '';
+if ($_ytUrl && preg_match('/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $_ytUrl, $_ytm)) {
+    $_ytId = $_ytm[1];
+    $recipeSchema['video'] = [
+        '@type'        => 'VideoObject',
+        'name'         => $r['title'],
+        'description'  => 'How to make ' . $r['title'],
+        'thumbnailUrl' => ['https://img.youtube.com/vi/' . $_ytId . '/maxresdefault.jpg'],
+        'contentUrl'   => 'https://www.youtube.com/watch?v=' . $_ytId,
+        'embedUrl'     => 'https://www.youtube.com/embed/' . $_ytId,
+        'uploadDate'   => date('Y-m-d', strtotime($r['created_at'])),
+    ];
+}
 
 // Aggregate rating from reactions (only if reactions exist)
 $rSt = db()->prepare("SELECT COUNT(*) FROM reactions WHERE target_type='recipe' AND target_id=?");
