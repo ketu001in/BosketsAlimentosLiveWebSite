@@ -232,6 +232,29 @@ function ensure_recipe_youtube_column(): void
     }
 }
 
+/** recipes.prep_time / cook_time — optional fields for SEO schema (stored as minutes). */
+function ensure_recipe_time_columns(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    if (!db()->query("SHOW COLUMNS FROM recipes LIKE 'prep_time'")->fetch()) {
+        db()->exec("ALTER TABLE recipes ADD COLUMN prep_time SMALLINT UNSIGNED NULL AFTER youtube_url");
+    }
+    if (!db()->query("SHOW COLUMNS FROM recipes LIKE 'cook_time'")->fetch()) {
+        db()->exec("ALTER TABLE recipes ADD COLUMN cook_time SMALLINT UNSIGNED NULL AFTER prep_time");
+    }
+}
+
+/** Convert minutes to ISO 8601 duration string (e.g. 90 → PT1H30M). */
+function mins_to_iso8601(int $mins): string
+{
+    if ($mins <= 0) return 'PT0M';
+    $h = intdiv($mins, 60);
+    $m = $mins % 60;
+    return 'PT' . ($h ? $h . 'H' : '') . ($m ? $m . 'M' : '');
+}
+
 /** One-to-one private messages between buddies. */
 function ensure_messages_table(): void
 {

@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $me  = require_login();
 $uid = (int)$me['id'];
 ensure_recipe_youtube_column();
+ensure_recipe_time_columns();
 
 // ---------------------------------------------------------------- Delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['delete_id'])) {
@@ -78,6 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['delete_id'])) {
     $catName  = trim($_POST['category'] ?? '');
     $cuiName  = trim($_POST['cuisine'] ?? '');
     $oriName  = trim($_POST['origin'] ?? '');
+    $prepTime = max(0, (int)($_POST['prep_time'] ?? 0)) ?: null;
+    $cookTime = max(0, (int)($_POST['cook_time'] ?? 0)) ?: null;
     $ingNames = $_POST['ing_name'] ?? [];
     $ingQtys  = $_POST['ing_qty'] ?? [];
     $stepTexts = $_POST['step_text'] ?? [];
@@ -145,8 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['delete_id'])) {
 
             if ($editId) {
                 $pdo->prepare(
-                    'UPDATE recipes SET title=?, image=?, story=?, youtube_url=?, category_id=?, cuisine_id=?, origin_id=?, verdict=? WHERE id=?'
-                )->execute([$title, $mainImage, $story ?: null, $youtube ?: null, $catId, $cuiId, $oriId, $verdict ?: null, $editId]);
+                    'UPDATE recipes SET title=?, image=?, story=?, youtube_url=?, prep_time=?, cook_time=?, category_id=?, cuisine_id=?, origin_id=?, verdict=? WHERE id=?'
+                )->execute([$title, $mainImage, $story ?: null, $youtube ?: null, $prepTime, $cookTime, $catId, $cuiId, $oriId, $verdict ?: null, $editId]);
                 $recipeId = $editId;
                 $pdo->prepare('DELETE FROM recipe_ingredients WHERE recipe_id = ?')->execute([$recipeId]);
                 // remove old step media that is not being kept
@@ -163,9 +166,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['delete_id'])) {
                 $st->execute([$slug . '%']);
                 if ((int)$st->fetchColumn() > 0) $slug .= '-' . substr(bin2hex(random_bytes(3)), 0, 5);
                 $pdo->prepare(
-                    "INSERT INTO recipes (user_id, title, slug, image, story, youtube_url, category_id, cuisine_id, origin_id, verdict, status, created_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', NOW())"
-                )->execute([$uid, $title, $slug, $mainImage, $story ?: null, $youtube ?: null, $catId, $cuiId, $oriId, $verdict ?: null]);
+                    "INSERT INTO recipes (user_id, title, slug, image, story, youtube_url, prep_time, cook_time, category_id, cuisine_id, origin_id, verdict, status, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', NOW())"
+                )->execute([$uid, $title, $slug, $mainImage, $story ?: null, $youtube ?: null, $prepTime, $cookTime, $catId, $cuiId, $oriId, $verdict ?: null]);
                 $recipeId = (int)$pdo->lastInsertId();
             }
 
@@ -311,6 +314,16 @@ $v = fn(string $key, string $fallback = '') => e($_POST[$key] ?? ($recipe[$key] 
         <span class="ta-wrap"><input type="text" class="typeahead" data-master="origins" name="origin" maxlength="100"
                placeholder="e.g. Mumbai street food" value="<?= e($_POST['origin'] ?? ($recipe['origins_name'] ?? '')) ?>" autocomplete="off"></span>
       </label>
+      <div class="form-row" style="margin-top:14px">
+        <label class="field">Prep time <small>Optional — in minutes</small>
+          <input type="number" name="prep_time" min="0" max="9999" placeholder="e.g. 30"
+                 value="<?= e($_POST['prep_time'] ?? ($recipe['prep_time'] ?? '')) ?>">
+        </label>
+        <label class="field">Cook time <small>Optional — in minutes</small>
+          <input type="number" name="cook_time" min="0" max="9999" placeholder="e.g. 45"
+                 value="<?= e($_POST['cook_time'] ?? ($recipe['cook_time'] ?? '')) ?>">
+        </label>
+      </div>
     </div>
 
     <!-- Section 4: method steps -->

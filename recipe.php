@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $me = current_user();
 $id = (int)($_GET['id'] ?? 0);
 ensure_recipe_youtube_column();
+ensure_recipe_time_columns();
 
 $st = db()->prepare(
     "SELECT r.*, u.username, u.display_name, u.avatar, u.bio,
@@ -80,8 +81,12 @@ $recipeSchema = [
     'recipeInstructions' => $schemaSteps ?: null,
 ];
 if ($r['image'])          $recipeSchema['image']          = [url($r['image'])];
-if ($r['category_name'])  $recipeSchema['recipeCategory'] = $r['category_name'];
-if ($r['cuisine_name'])   $recipeSchema['recipeCuisine']  = $r['cuisine_name'];
+if ($r['category_name'])        $recipeSchema['recipeCategory'] = $r['category_name'];
+if ($r['cuisine_name'])         $recipeSchema['recipeCuisine']  = $r['cuisine_name'];
+if (!empty($r['prep_time']))    $recipeSchema['prepTime']        = mins_to_iso8601((int)$r['prep_time']);
+if (!empty($r['cook_time']))    $recipeSchema['cookTime']        = mins_to_iso8601((int)$r['cook_time']);
+if (!empty($r['prep_time']) && !empty($r['cook_time']))
+    $recipeSchema['totalTime'] = mins_to_iso8601((int)$r['prep_time'] + (int)$r['cook_time']);
 
 // Video field — extract YouTube ID if present
 $_ytUrl = $r['youtube_url'] ?? '';
