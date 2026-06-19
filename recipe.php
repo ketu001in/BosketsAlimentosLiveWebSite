@@ -52,8 +52,9 @@ include __DIR__ . '/includes/header.php';
 <div class="container section">
 
   <div class="recipe-hero">
-    <div class="recipe-hero-img"<?php if ($r['image']): ?> style="background-image:url('<?= e(url($r['image'])) ?>')"<?php endif; ?>>
+    <div class="recipe-hero-img">
       <?php if ($r['image']): ?>
+        <img src="<?= e(url($r['image'])) ?>" class="recipe-hero-bg" aria-hidden="true">
         <img src="<?= e(url($r['image'])) ?>" alt="<?= e($r['title']) ?>" class="recipe-cover-img" title="Click to view full image">
       <?php endif; ?>
     </div>
