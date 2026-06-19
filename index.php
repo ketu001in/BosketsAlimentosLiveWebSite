@@ -47,7 +47,7 @@ $starRecipe = get_star_recipe();
 $pageTitle = 'Home';
 include __DIR__ . '/includes/header.php';
 ?>
-<section class="hero<?= $starRecipe ? ' hero-compact' : '' ?>">
+<section class="hero">
   <div class="container">
     <h1>A world of <em>truly fusion</em> food</h1>
     <p>Welcome to <?= e(SITE_NAME) ?> — a 100% vegetarian community where cuisines collide deliciously. Post recipes, swap food stories, debate in the forum and cook alongside your buddies.</p>
@@ -72,33 +72,28 @@ include __DIR__ . '/includes/header.php';
 <?php if ($starRecipe): ?>
 <section class="star-recipe-section">
   <div class="container">
-    <div class="star-recipe-inner">
-      <a class="star-recipe-img" href="<?= e(url('recipe.php?id=' . (int)$starRecipe['id'])) ?>">
+    <div class="star-ribbon">
+      <a class="star-ribbon-thumb" href="<?= e(url('recipe.php?id=' . (int)$starRecipe['id'])) ?>">
         <?php if ($starRecipe['image']): ?>
+          <div class="star-ribbon-thumb-blur"><img src="<?= e(url($starRecipe['image'])) ?>" aria-hidden="true"></div>
           <img src="<?= e(url($starRecipe['image'])) ?>" alt="<?= e($starRecipe['title']) ?>">
-          <div class="star-recipe-bg-blur"><img src="<?= e(url($starRecipe['image'])) ?>" aria-hidden="true"></div>
         <?php else: ?>
-          <div class="star-recipe-img-empty">🍳</div>
+          <span style="position:relative;z-index:1;font-size:30px;display:flex;align-items:center;justify-content:center;height:100%">🍳</span>
         <?php endif; ?>
       </a>
-      <div class="star-recipe-body">
-        <span class="star-badge">&#11088; <?= e($starRecipe['star_label']) ?></span>
-        <h2 class="star-recipe-title">
-          <a href="<?= e(url('recipe.php?id=' . (int)$starRecipe['id'])) ?>"><?= e($starRecipe['title']) ?></a>
-        </h2>
-        <?php
-          $starDesc = trim($starRecipe['story'] ?? '');
-          if ($starDesc && strtolower($starDesc) !== strtolower($starRecipe['title'])) {
-              echo '<p class="star-recipe-desc">' . e(mb_strimwidth(preg_replace('/\s+/', ' ', $starDesc), 0, 200, '…')) . '</p>';
-          }
-        ?>
-        <div class="star-recipe-meta">
-          <?php if ($starRecipe['category_name']): ?><span class="star-tag"><?= e($starRecipe['category_name']) ?></span><?php endif; ?>
-          <?php if ($starRecipe['cuisine_name']): ?><span class="star-tag"><?= e($starRecipe['cuisine_name']) ?></span><?php endif; ?>
-          <span class="star-tag">100% Veg</span>
+      <div class="star-ribbon-info">
+        <div class="star-ribbon-top">
+          <span class="star-badge">&#11088; <?= e($starRecipe['star_label']) ?></span>
+          <span class="star-ribbon-title"><a href="<?= e(url('recipe.php?id=' . (int)$starRecipe['id'])) ?>"><?= e($starRecipe['title']) ?></a></span>
         </div>
-        <a class="btn btn-accent star-recipe-btn" href="<?= e(url('recipe.php?id=' . (int)$starRecipe['id'])) ?>">View Recipe →</a>
-        <p class="star-recipe-author">by <?= e($starRecipe['display_name'] ?: $starRecipe['username']) ?></p>
+        <div class="star-ribbon-meta">
+          <?php if ($starRecipe['category_name']): ?><span><?= e($starRecipe['category_name']) ?></span><?php endif; ?>
+          <?php if ($starRecipe['cuisine_name']): ?><span><?= e($starRecipe['cuisine_name']) ?></span><?php endif; ?>
+          <span>by <?= e($starRecipe['display_name'] ?: $starRecipe['username']) ?></span>
+        </div>
+      </div>
+      <div class="star-ribbon-btn">
+        <a class="btn btn-sm btn-accent" href="<?= e(url('recipe.php?id=' . (int)$starRecipe['id'])) ?>">View Recipe →</a>
       </div>
     </div>
   </div>
