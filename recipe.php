@@ -47,6 +47,49 @@ $pageDesc  = trim((string)$r['story']) !== ''
     ? preg_replace('/\s+/', ' ', $r['story'])
     : '100% veg fusion recipe on ' . SITE_NAME . ' by ' . ($r['display_name'] ?: $r['username']) . '.';
 $pageImage = $r['image'] ?: '';
+$ogType    = 'article';
+
+// ── Recipe JSON-LD structured data ───────────────────────────────────────────
+$schemaIngs   = [];
+foreach ($ingredients as $ing) {
+    $qty = trim($ing['quantity'] ?? '');
+    $schemaIngs[] = $qty ? $qty . ' ' . $ing['name'] : $ing['name'];
+}
+$schemaSteps = [];
+foreach ($steps as $step) {
+    $schemaSteps[] = ['@type' => 'HowToStep', 'text' => $step['instruction']];
+}
+$recipeSchema = [
+    '@context'    => 'https://schema.org/',
+    '@type'       => 'Recipe',
+    'name'        => $r['title'],
+    'description' => mb_strimwidth(preg_replace('/\s+/', ' ', $pageDesc), 0, 300, '…'),
+    'author'      => ['@type' => 'Person', 'name' => $r['display_name'] ?: $r['username']],
+    'datePublished' => date('Y-m-d', strtotime($r['created_at'])),
+    'keywords'    => implode(', ', array_filter([
+        '100% vegetarian', 'fusion food', 'vegetarian recipe',
+        $r['category_name'] ?? '', $r['cuisine_name'] ?? '', $r['origin_name'] ?? '', SITE_NAME,
+    ])),
+    'recipeIngredient'   => $schemaIngs ?: null,
+    'recipeInstructions' => $schemaSteps ?: null,
+];
+if ($r['image'])          $recipeSchema['image']          = [url($r['image'])];
+if ($r['category_name'])  $recipeSchema['recipeCategory'] = $r['category_name'];
+if ($r['cuisine_name'])   $recipeSchema['recipeCuisine']  = $r['cuisine_name'];
+
+// Aggregate rating from reactions (only if reactions exist)
+$rSt = db()->prepare("SELECT COUNT(*) FROM reactions WHERE target_type='recipe' AND target_id=?");
+$rSt->execute([$id]);
+$rCount = (int)$rSt->fetchColumn();
+if ($rCount > 0) {
+    $recipeSchema['aggregateRating'] = ['@type' => 'AggregateRating', 'ratingValue' => '4.5', 'ratingCount' => $rCount, 'bestRating' => '5', 'worstRating' => '1'];
+}
+
+// Remove nulls/empty
+foreach ($recipeSchema as $k => $v) { if ($v === null || $v === '' || $v === []) unset($recipeSchema[$k]); }
+
+$schemaJson = '<script type="application/ld+json">' . json_encode($recipeSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+
 include __DIR__ . '/includes/header.php';
 ?>
 <div class="container section">

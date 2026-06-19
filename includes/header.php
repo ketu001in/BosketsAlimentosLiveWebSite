@@ -30,7 +30,7 @@ $pageUrl   = base_url() . ($_SERVER['REQUEST_URI'] ?? '/');
 <meta name="description" content="<?= e(mb_strimwidth($pageDesc, 0, 160, '…')) ?>">
 <?php if (!empty($noIndex)): ?><meta name="robots" content="noindex"><?php endif; ?>
 <meta property="og:site_name" content="<?= e(SITE_NAME) ?>">
-<meta property="og:type" content="website">
+<meta property="og:type" content="<?= e($ogType ?? 'website') ?>">
 <meta property="og:title" content="<?= e($pageTitle) ?>">
 <meta property="og:description" content="<?= e(mb_strimwidth($pageDesc, 0, 200, '…')) ?>">
 <meta property="og:url" content="<?= e($pageUrl) ?>">
@@ -42,7 +42,18 @@ $pageUrl   = base_url() . ($_SERVER['REQUEST_URI'] ?? '/');
 <link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>?v=13">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='none' stroke='%2323756a' stroke-width='6'/%3E%3Cpath d='M50 26 C39 40 39 58 50 74 C61 58 61 40 50 26 Z' fill='%233fa796'/%3E%3C/svg%3E">
 <script>window.BOSKETS = {base: <?= json_encode(base_url()) ?>, csrf: <?= json_encode(is_logged_in() ? csrf_token() : '') ?>, loggedIn: <?= is_logged_in() ? 'true' : 'false' ?>};</script>
-<?php require_once __DIR__ . '/cms.php'; echo cms_head_html(); /* CMS: site theme + fonts (no-op until configured) */ ?>
+<?php require_once __DIR__ . '/cms.php'; echo cms_head_html(); /* CMS: site theme + fonts (no-op until configured) */
+// WebSite schema — on every page
+$_ws = ['@context'=>'https://schema.org','@type'=>'WebSite',
+    'name'=>SITE_NAME,'url'=>base_url().'/',
+    'description'=>SITE_NAME.' — '.SITE_TAGLINE.'. 100% vegetarian fusion recipes, food stories and community.',
+    'potentialAction'=>['@type'=>'SearchAction',
+        'target'=>['@type'=>'EntryPoint','urlTemplate'=>base_url().'/recipes.php?q={search_term_string}'],
+        'query-input'=>'required name=search_term_string']];
+echo '<script type="application/ld+json">'.json_encode($_ws,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE).'</script>';
+// Page-specific schema (e.g. Recipe on recipe.php)
+if (!empty($schemaJson)) echo $schemaJson;
+?>
 </head>
 <body>
 <header class="site-header">

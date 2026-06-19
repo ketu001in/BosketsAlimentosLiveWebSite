@@ -15,5 +15,4 @@ Disallow: /oauth.php
 Disallow: /link-account.php
 Disallow: /install.php
 
-# Sitemap (replace with your real domain after deployment)
-Sitemap: /sitemap.php
+Sitemap: https://www.bosketsalimentos.com/sitemap.php
