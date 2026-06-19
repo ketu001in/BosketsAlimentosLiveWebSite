@@ -54,9 +54,7 @@ include __DIR__ . '/includes/header.php';
   <div class="recipe-hero">
     <div class="recipe-hero-img">
       <?php if ($r['image']): ?>
-        <a href="<?= e(url($r['image'])) ?>" class="recipe-img-trigger" title="View full image">
-          <img src="<?= e(url($r['image'])) ?>" alt="<?= e($r['title']) ?>">
-        </a>
+        <img src="<?= e(url($r['image'])) ?>" alt="<?= e($r['title']) ?>" class="recipe-cover-img" title="Click to view full image">
       <?php endif; ?>
     </div>
     <div>
@@ -206,33 +204,26 @@ include __DIR__ . '/includes/header.php';
 </div>
 <script>
 (function () {
-  var trigger = document.querySelector('.recipe-img-trigger');
-  if (!trigger) return;
-  var lb = document.getElementById('recipe-img-lb');
+  var cover = document.querySelector('.recipe-cover-img');
+  if (!cover) return;
+  var lb   = document.getElementById('recipe-img-lb');
   var lbImg = lb.querySelector('img');
-  trigger.addEventListener('click', function (e) {
-    e.preventDefault();
-    lbImg.src = trigger.href;
-    lbImg.alt = trigger.querySelector('img').alt;
+
+  function openLb() {
+    lbImg.src = cover.src;
+    lbImg.alt = cover.alt;
     lb.classList.add('open');
     document.body.style.overflow = 'hidden';
-  });
-  lb.addEventListener('click', function (e) {
-    if (e.target !== lbImg) {
-      lb.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-  });
-  document.getElementById('recipe-img-lb-close').addEventListener('click', function () {
+  }
+  function closeLb() {
     lb.classList.remove('open');
     document.body.style.overflow = '';
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && lb.classList.contains('open')) {
-      lb.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-  });
+  }
+
+  cover.addEventListener('click', openLb);
+  document.getElementById('recipe-img-lb-close').addEventListener('click', closeLb);
+  lb.addEventListener('click', function (e) { if (e.target !== lbImg) closeLb(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLb(); });
 }());
 </script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
