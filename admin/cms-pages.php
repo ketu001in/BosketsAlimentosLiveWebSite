@@ -3,6 +3,42 @@
 require_once __DIR__ . '/_admin.php';
 ensure_cms_tables();
 
+// ── Seed existing static pages on first visit so admin can edit them ──────────
+$_seed = [
+    'about-us' => [
+        'title' => "About Us",
+        'body'  => "<h2>Our Story</h2>
+<p>Welcome to Bosket's Alimentos, where passion meets the plate and tradition finds a new voice.</p>
+<p>Our journey began with a simple but profound love for food. Founded by <strong>Boskey (\"Bos\")</strong> and <strong>Ketul (\"Ket\")</strong>, a creative and food-enthusiast couple, our story is one of exploration, heritage, and culinary innovation.</p>
+<p>Moving from the vibrant, flavor-rich state of Gujarat to the bustling gastronomic hub of Bangalore, we brought with us a deep appreciation for authentic regional cuisines. Our relentless passion for cooking and experimenting soon caught the attention of Bangalore's culinary community, leading us to win several prestigious culinary titles.</p>
+
+<h2>Our Culinary Canvas</h2>
+<p>At the heart of Bosket's Alimentos is our unique USP: <strong>Curated Fusion Vegetarian Cuisine</strong>. We draw deep inspiration from traditional Gujarati recipes and other regional Indian delicacies, carefully deconstructing and reimagining them. By adding meaningful, contemporary twists, we create entirely unique and original fusion dishes.</p>
+
+<h2>Our Vision</h2>
+<p>To revolutionize the vegetarian culinary landscape by making innovative fusion food an everyday delight, while establishing India's premier community-driven platform that celebrates and elevates undiscovered home culinary talent.</p>
+
+<h2>Our Mission</h2>
+<p>To curate extraordinary, heritage-inspired vegetarian fusion experiences, and to empower passionate home chefs by providing them with the professional tools, platform, and visibility needed to turn their culinary art into a celebrated profession.</p>",
+        'meta'  => "The story of Bosket's Alimentos — curated fusion vegetarian cuisine and a professional platform for home chefs to shine.",
+    ],
+    'contact-intro' => [
+        'title' => "Contact Us — Intro",
+        'body'  => "<p>A question, an idea, a partnership, or something on the site that doesn't taste right — write to us. We read everything.</p>",
+        'meta'  => '',
+    ],
+];
+foreach ($_seed as $_slug => $_data) {
+    $exists = db()->prepare("SELECT COUNT(*) FROM cms_pages WHERE slug = ?");
+    $exists->execute([$_slug]);
+    if (!(int)$exists->fetchColumn()) {
+        db()->prepare(
+            "INSERT INTO cms_pages (title, slug, body, meta_description, visibility, status, created_by, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'public', 'published', ?, NOW(), NOW())"
+        )->execute([$_data['title'], $_slug, $_data['body'], $_data['meta'] ?: null, $admin['id']]);
+    }
+}
+
 // ── Actions ───────────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();

@@ -180,7 +180,7 @@ function cms_menu_item_url(array $item): string
 
 // ---------------------------------------------------------------- Public-site render hooks
 
-/** <head> additions: theme CSS, web font, anti-flash inline script, toggle script. */
+/** <head> additions: theme CSS, web font, anti-flash inline script, toggle script, custom colours. */
 function cms_head_html(): string
 {
     $cfg = cms_theme_config();
@@ -201,6 +201,19 @@ function cms_head_html(): string
         . 'd.setAttribute("data-theme",t);d.setAttribute("data-font",' . json_encode($font) . ');'
         . '}catch(e){}})();</script>';
     $h .= '<script defer src="' . htmlspecialchars($js, ENT_QUOTES) . '"></script>';
+
+    // Custom brand colours — output as CSS variable overrides if set
+    $green  = cms_setting('color_green_700', '');
+    $orange = cms_setting('color_orange_500', '');
+    if ($green || $orange) {
+        $vars = '';
+        if ($green  && preg_match('/^#[0-9a-fA-F]{6}$/', $green))  $vars .= '--green-700:' . $green . ';--green-600:' . $green . ';--green-900:' . $green . ';';
+        if ($orange && preg_match('/^#[0-9a-fA-F]{6}$/', $orange)) $vars .= '--orange-500:' . $orange . ';--orange-600:' . $orange . ';';
+        if ($vars) {
+            $h .= '<style>:root{' . $vars . '}</style>';
+        }
+    }
+
     return $h;
 }
 
@@ -213,6 +226,24 @@ function cms_theme_toggle_html(): string
     }
     return '<button type="button" class="cms-theme-toggle" id="cms-theme-toggle" title="Switch light / dark" aria-label="Switch light or dark theme">'
          . '<span class="cms-toggle-sun" aria-hidden="true">☀️</span><span class="cms-toggle-moon" aria-hidden="true">🌙</span></button>';
+}
+
+/**
+ * Return the published body of a CMS page by slug, or null if not found/draft.
+ * Used by about.php, contact.php etc. to allow CMS overrides of static pages.
+ */
+function cms_get_page_body(string $slug): ?string
+{
+    try {
+        $st = db()->prepare(
+            "SELECT body FROM cms_pages WHERE slug = ? AND status = 'published' LIMIT 1"
+        );
+        $st->execute([$slug]);
+        $body = $st->fetchColumn();
+        return ($body !== false && $body !== null) ? (string)$body : null;
+    } catch (Throwable $e) {
+        return null;
+    }
 }
 
 /** Extra top-nav items added in the CMS (rendered after the built-in nav links). */
