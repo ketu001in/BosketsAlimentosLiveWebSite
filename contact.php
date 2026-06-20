@@ -83,20 +83,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle    = 'Contact Us';
-$pageDesc     = "Get in touch with the Bosket's Alimentos team — questions, ideas, feedback or partnerships.";
-$cmsIntro     = cms_get_page_body('contact-intro');
+$pageTitle = 'Contact Us';
+$pageDesc  = "Get in touch with the Bosket's Alimentos team — questions, ideas, feedback or partnerships.";
 include __DIR__ . '/includes/header.php';
 ?>
 <div class="container section section-narrow">
   <div style="text-align:center; margin-bottom:30px">
     <h1>Contact us</h1>
-    <?php if ($cmsIntro): ?>
-      <div style="max-width:520px;margin:8px auto 0;color:var(--ink-soft)"><?= $cmsIntro ?></div>
-    <?php else: ?>
-      <p class="muted" style="max-width:520px; margin:8px auto 0">A question, an idea, a partnership, or something on the site
-      that doesn't taste right — write to us. We read everything.</p>
-    <?php endif; ?>
+    <p class="muted" style="max-width:520px; margin:8px auto 0">A question, an idea, a partnership, or something on the site
+    that doesn't taste right — write to us. We read everything.</p>
   </div>
 
   <?php if ($sent): ?>
