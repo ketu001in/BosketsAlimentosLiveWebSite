@@ -1,8 +1,7 @@
 <?php
 /** Admin: manage CMS static pages (About, Contact, etc.) */
 require_once __DIR__ . '/_admin.php';
-require_once dirname(__DIR__) . '/includes/cms.php';
-cms_migrate();
+ensure_cms_tables();
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

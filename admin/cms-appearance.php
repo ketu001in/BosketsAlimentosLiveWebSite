@@ -1,8 +1,7 @@
 <?php
 /** Admin: site appearance — fonts, colour scheme, dark-mode toggle. */
 require_once __DIR__ . '/_admin.php';
-require_once dirname(__DIR__) . '/includes/cms.php';
-cms_migrate();
+ensure_cms_tables();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();

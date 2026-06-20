@@ -255,6 +255,49 @@ function mins_to_iso8601(int $mins): string
     return 'PT' . ($h ? $h . 'H' : '') . ($m ? $m . 'M' : '');
 }
 
+// ─── CMS tables (same schema as CMS_Portal, shared by admin wrappers) ────────
+
+function ensure_cms_tables(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    $pdo = db();
+    $pdo->exec("CREATE TABLE IF NOT EXISTS cms_pages (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(160) NOT NULL,
+        slug VARCHAR(180) NOT NULL UNIQUE,
+        body MEDIUMTEXT NULL,
+        meta_description VARCHAR(200) NULL,
+        visibility ENUM('public','members') NOT NULL DEFAULT 'public',
+        status ENUM('draft','published') NOT NULL DEFAULT 'draft',
+        created_by INT UNSIGNED NULL,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $pdo->exec("CREATE TABLE IF NOT EXISTS cms_menu_items (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        label VARCHAR(80) NOT NULL,
+        location ENUM('nav','footer') NOT NULL DEFAULT 'nav',
+        parent_id INT UNSIGNED NULL,
+        link_type ENUM('page','url') NOT NULL DEFAULT 'url',
+        page_id INT UNSIGNED NULL,
+        url VARCHAR(255) NULL,
+        new_tab TINYINT(1) NOT NULL DEFAULT 0,
+        sort_order INT NOT NULL DEFAULT 0,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        created_at DATETIME NOT NULL,
+        KEY idx_loc (location, is_active, sort_order)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $pdo->exec("CREATE TABLE IF NOT EXISTS cms_settings (
+        name VARCHAR(50) NOT NULL PRIMARY KEY,
+        value TEXT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $defaults = ['theme_default'=>'light','visitor_toggle'=>'1','font_pairing'=>'playfair_inter'];
+    $ins = $pdo->prepare('INSERT IGNORE INTO cms_settings (name,value) VALUES (?,?)');
+    foreach ($defaults as $k => $v) $ins->execute([$k, $v]);
+}
+
 // ─── Recipe pending status ───────────────────────────────────────────────────
 
 /** Add 'pending' to recipes.status ENUM so non-admin posts can await approval. */
