@@ -39,7 +39,7 @@ $pageUrl   = base_url() . ($_SERVER['REQUEST_URI'] ?? '/');
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>?v=15">
+<link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>?v=16">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='none' stroke='%2323756a' stroke-width='6'/%3E%3Cpath d='M50 26 C39 40 39 58 50 74 C61 58 61 40 50 26 Z' fill='%233fa796'/%3E%3C/svg%3E">
 <script>window.BOSKETS = {base: <?= json_encode(base_url()) ?>, csrf: <?= json_encode(is_logged_in() ? csrf_token() : '') ?>, loggedIn: <?= is_logged_in() ? 'true' : 'false' ?>};</script>
 <?php require_once __DIR__ . '/cms.php'; echo cms_head_html(); /* CMS: site theme + fonts (no-op until configured) */
@@ -84,9 +84,14 @@ if (!empty($schemaJson)) echo $schemaJson;
           ?></a>
         </div>
         <div class="nav-bell">
+          <?php
+            ensure_announcements_tables();
+            $n     = unread_count((int)$me['id']);
+            $annN  = unread_announcements_count((int)$me['id']);
+            $total = $n + $annN;
+          ?>
           <a href="<?= e(url('notifications.php')) ?>" id="bell" title="Notifications">🔔<?php
-            $n = unread_count((int)$me['id']);
-            if ($n > 0) echo '<span class="bell-count" id="bell-count">' . $n . '</span>';
+            if ($total > 0) echo '<span class="bell-count" id="bell-count">' . $total . '</span>';
           ?></a>
         </div>
         <div class="nav-user">

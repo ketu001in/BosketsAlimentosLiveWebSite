@@ -13,8 +13,13 @@ function admin_nav(string $active): void
         'forum'    => ['forum.php',            'Forum'],
         'masters'  => ['masters.php',          'Master Lists'],
         'messages' => ['messages.php',         'Messages'],
-        'import'   => ['import-blogspot.php',  'Import'],
-        'repair'   => ['repair-images.php',    'Repair Images'],
+        'import'        => ['import-blogspot.php',  'Import'],
+        'repair'        => ['repair-images.php',    'Repair Images'],
+        'announcements' => ['announcements.php',    'Announcements'],
+        'gallery'       => ['gallery.php',          'Gallery'],
+        'cms-pages'     => ['cms-pages.php',        'Pages'],
+        'cms-appearance'=> ['cms-appearance.php',   'Appearance'],
+        'cms-menus'     => ['cms-menus.php',        'Menus'],
     ];
     echo '<div class="admin-nav">';
     foreach ($items as $key => [$href, $label]) {

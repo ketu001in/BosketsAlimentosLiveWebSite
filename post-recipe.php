@@ -6,6 +6,7 @@ $me  = require_login();
 $uid = (int)$me['id'];
 ensure_recipe_youtube_column();
 ensure_recipe_time_columns();
+ensure_recipe_pending_status();
 
 // ---------------------------------------------------------------- Delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['delete_id'])) {
@@ -165,10 +166,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['delete_id'])) {
                 $st = $pdo->prepare('SELECT COUNT(*) FROM recipes WHERE slug LIKE ?');
                 $st->execute([$slug . '%']);
                 if ((int)$st->fetchColumn() > 0) $slug .= '-' . substr(bin2hex(random_bytes(3)), 0, 5);
+                $recipeStatus = is_admin() ? 'published' : 'pending';
                 $pdo->prepare(
                     "INSERT INTO recipes (user_id, title, slug, image, story, youtube_url, prep_time, cook_time, category_id, cuisine_id, origin_id, verdict, status, created_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', NOW())"
-                )->execute([$uid, $title, $slug, $mainImage, $story ?: null, $youtube ?: null, $prepTime, $cookTime, $catId, $cuiId, $oriId, $verdict ?: null]);
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+                )->execute([$uid, $title, $slug, $mainImage, $story ?: null, $youtube ?: null, $prepTime, $cookTime, $catId, $cuiId, $oriId, $verdict ?: null, $recipeStatus]);
                 $recipeId = (int)$pdo->lastInsertId();
             }
 
@@ -214,9 +216,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['delete_id'])) {
             }
 
             $pdo->commit();
-            flash('success', $editId ? 'Recipe updated! 🌟' : 'Your recipe is live! 🎉 Share it with your buddies.');
-            // Send email notifications for new recipes only
-            if (!$editId) {
+            if ($editId) {
+                flash('success', 'Recipe updated! 🌟');
+            } elseif ($recipeStatus === 'pending') {
+                flash('info', 'Your recipe has been submitted and is pending admin approval. It will go live once approved! 🌿');
+            } else {
+                flash('success', 'Your recipe is live! 🎉 Share it with your buddies.');
                 send_recipe_notification_emails($recipeId, $uid);
             }
             redirect('recipe.php?id=' . $recipeId);

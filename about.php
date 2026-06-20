@@ -1,7 +1,9 @@
 <?php
-/** About Us — brand story (content from the official About Us document). */
+/** About Us — brand story + photo gallery. */
 require_once __DIR__ . '/includes/bootstrap.php';
+ensure_gallery_table();
 
+$galleryImages = db()->query("SELECT image, caption FROM gallery ORDER BY sort_order, id LIMIT 200")->fetchAll();
 $pageTitle = 'About Us';
 $pageDesc  = "The story of Bosket's Alimentos — curated fusion vegetarian cuisine and a professional platform for home chefs to shine.";
 include __DIR__ . '/includes/header.php';
@@ -78,4 +80,41 @@ include __DIR__ . '/includes/header.php';
   </p>
 
 </div>
+
+<?php if ($galleryImages): ?>
+<section class="section" style="background:var(--green-50)">
+  <div class="container">
+    <div class="section-head"><h2>Our Gallery</h2></div>
+    <div class="gallery-masonry">
+      <?php foreach ($galleryImages as $img): ?>
+        <div class="gallery-item" onclick="glbOpen('<?= e(url($img['image'])) ?>', '<?= e(addslashes($img['caption'] ?? '')) ?>')">
+          <img src="<?= e(url($img['image'])) ?>" alt="<?= e($img['caption'] ?? '') ?>" loading="lazy">
+          <?php if ($img['caption']): ?><div class="gallery-caption"><?= e($img['caption']) ?></div><?php endif; ?>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+
+<!-- Gallery lightbox -->
+<div class="glb" id="glb" onclick="if(event.target===this)glbClose()">
+  <button class="glb-close" onclick="glbClose()">&times;</button>
+  <img src="" id="glb-img" alt="">
+</div>
+<script>
+function glbOpen(src, alt) {
+  var lb = document.getElementById('glb');
+  document.getElementById('glb-img').src = src;
+  document.getElementById('glb-img').alt = alt;
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function glbClose() {
+  document.getElementById('glb').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') glbClose(); });
+</script>
+<?php endif; ?>
+
 <?php include __DIR__ . '/includes/footer.php'; ?>

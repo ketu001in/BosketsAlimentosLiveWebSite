@@ -255,6 +255,83 @@ function mins_to_iso8601(int $mins): string
     return 'PT' . ($h ? $h . 'H' : '') . ($m ? $m . 'M' : '');
 }
 
+// ─── Recipe pending status ───────────────────────────────────────────────────
+
+/** Add 'pending' to recipes.status ENUM so non-admin posts can await approval. */
+function ensure_recipe_pending_status(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    $col = db()->query("SHOW COLUMNS FROM recipes LIKE 'status'")->fetch();
+    if ($col && strpos($col['Type'], 'pending') === false) {
+        db()->exec("ALTER TABLE recipes MODIFY COLUMN status ENUM('pending','published','removed') NOT NULL DEFAULT 'published'");
+    }
+}
+
+// ─── Announcements ───────────────────────────────────────────────────────────
+
+/** Push-announcement tables: one row per announcement + per-user read/dismiss records. */
+function ensure_announcements_tables(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    db()->exec("CREATE TABLE IF NOT EXISTS announcements (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        body TEXT NOT NULL,
+        created_by INT UNSIGNED NOT NULL,
+        created_at DATETIME NOT NULL,
+        is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+        KEY idx_active (is_deleted, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    db()->exec("CREATE TABLE IF NOT EXISTS announcement_reads (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT UNSIGNED NOT NULL,
+        announcement_id INT UNSIGNED NOT NULL,
+        is_dismissed TINYINT(1) NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL,
+        UNIQUE KEY uq_user_ann (user_id, announcement_id),
+        KEY idx_user (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+/** Count unread (not yet in announcement_reads) active announcements for a user. */
+function unread_announcements_count(int $userId): int
+{
+    ensure_announcements_tables();
+    $st = db()->prepare(
+        "SELECT COUNT(*) FROM announcements a
+          WHERE a.is_deleted = 0
+            AND NOT EXISTS (
+                SELECT 1 FROM announcement_reads r
+                 WHERE r.announcement_id = a.id AND r.user_id = ?
+            )"
+    );
+    $st->execute([$userId]);
+    return (int)$st->fetchColumn();
+}
+
+// ─── Gallery ─────────────────────────────────────────────────────────────────
+
+/** Photo gallery table for About Us page. */
+function ensure_gallery_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    db()->exec("CREATE TABLE IF NOT EXISTS gallery (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        image VARCHAR(255) NOT NULL,
+        caption VARCHAR(200) NULL,
+        sort_order INT NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL,
+        created_by INT UNSIGNED NOT NULL,
+        KEY idx_sort (sort_order, id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
 // ─── Star Recipe ─────────────────────────────────────────────────────────────
 
 /** star_recipe settings table (one row, id=1). */
