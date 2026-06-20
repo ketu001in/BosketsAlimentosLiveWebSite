@@ -12,8 +12,9 @@ $urls = [
     ['loc' => url('recipes.php'),  'priority' => '0.9', 'changefreq' => 'daily'],
     ['loc' => url('forum.php'),    'priority' => '0.8', 'changefreq' => 'weekly'],
     ['loc' => url('register.php'), 'priority' => '0.5', 'changefreq' => 'monthly'],
-    ['loc' => url('about.php'),    'priority' => '0.5', 'changefreq' => 'monthly'],
-    ['loc' => url('contact.php'),  'priority' => '0.4', 'changefreq' => 'monthly'],
+    ['loc' => url('about.php'),          'priority' => '0.5', 'changefreq' => 'monthly'],
+    ['loc' => url('contact.php'),        'priority' => '0.4', 'changefreq' => 'monthly'],
+    ['loc' => url('privacy-policy.php'), 'priority' => '0.3', 'changefreq' => 'yearly'],
 ];
 
 $st = db()->query(
