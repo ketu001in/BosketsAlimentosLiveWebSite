@@ -1,116 +1,506 @@
 ================================================================================
-PROJECT PROMPT — BOSKET'S ALIMENTOS
+  BOSKET'S ALIMENTOS — MASTER PROJECT PROMPT (CONSOLIDATED)
+  Version 2.0 | June 2026 | Covers website + Android app + all enhancements
 ================================================================================
 
-WEBSITE NAME : Bosket's Alimentos
-TAGLINE      : A world of truly fusion food
-CATEGORY     : 100% Vegetarian food community website
+WEBSITE NAME  : Bosket's Alimentos
+TAGLINE       : A world of truly fusion food
+CATEGORY      : 100% Vegetarian fusion food community platform
+LIVE URL      : https://www.bosketsalimentos.com
+ANDROID APP   : com.bosketsalimentos.app (Google Play Store)
+FOUNDERS      : Boskey ("Bos") & Ketul ("Ket") — Bangalore, India
 
-OBJECTIVE
----------
-Build a fully interactive, professional, production-ready food community
-website with complete database integration, ready to be published on an
-existing Hostinger.com hosting account. The website flow should take
-reference (flow only — no data, design, or content copying) from
-https://www.plattershare.com
+================================================================================
+TECH STACK (CURRENT)
+================================================================================
+Backend       : PHP 8.3 (no frameworks) + MariaDB via PDO
+Frontend      : Custom CSS (CSS variables, dark mode, responsive) + Vanilla JS
+Auth          : PHP sessions + bcrypt passwords + Google/Facebook OAuth
+Hosting       : Hostinger shared hosting (hPanel)
+Android       : Kotlin WebView app (Android Studio)
+Repository    : GitHub — ketu001in/BosketsAlimentosLiveWebSite
 
---------------------------------------------------------------------------------
+For a full rewrite: Next.js + shadcn/ui (frontend on Vercel) + PHP REST API
+(existing backend stays on Hostinger).
+
+================================================================================
+GLOBAL RULES
+================================================================================
+- 100% vegetarian content only — no meat, no eggs in any recipe context.
+- All pages must be responsive (mobile-first), support dark mode, and be
+  SEO-optimised with appropriate meta tags.
+- CSRF protection on every POST form. Sessions use SameSite=Lax cookies.
+- All file uploads validated server-side (type + size). Images max 5 MB,
+  videos max 25 MB.
+- No frameworks on the backend — pure PHP 8.3 + PDO.
+- Schema changes use ensure_*() idempotent migration functions — never
+  require manual SQL or re-running install.php.
+- Do NOT commit: .env, keystore files, adminer.php, diagnostic scripts,
+  or any credentials.
+- Before building any module, ask clarifying questions until 99% sure.
+
+================================================================================
 MODULE 1 — USER MANAGEMENT
---------------------------------------------------------------------------------
+================================================================================
+
 1.1 Registration & Account
-    - Users register with email + password.
-    - Full account management functionality (login, logout, password
-      reset/change, edit profile, delete/deactivate account, etc.).
+    - Register with username, display name, email, password (bcrypt hashed).
+    - Optional profile picture upload (avatar) — max 5 MB, JPG/PNG/WEBP/GIF.
+    - Email uniqueness enforced; username uniqueness enforced (alphanumeric +
+      underscore, 3–30 chars).
+    - Optional newsletter opt-in checkbox at registration (email_notify flag +
+      unique unsubscribe token generated per user).
+    - Full account management: login, logout, password reset via email token,
+      change password, edit profile (display name, bio, email, avatar),
+      delete account (cascades all user content).
+    - Social login: Google OAuth + Facebook OAuth (optional — only shown when
+      OAuth keys configured in config.php). Users can link/unlink providers.
 
-1.2 Avatar Upload
-    - Users can optionally upload an avatar or real photo.
-    - Maximum file size: 5 MB (validated).
+1.2 Profile & Wall
+    - Each user has a profile page with tabs: Wall | Recipes | Buddies.
+    - Wall: user can post text updates and share recipes.
+    - All site visitors can view profiles; only logged-in users can react/comment.
+    - Profile shows avatar, display name, username, bio, join date, buddy count.
 
-1.3 Profile & Wall
-    - Each registered user has a profile page with a personal "wall"
-      showing their posted food stories and recipes.
-    - Users can LIKE, REACT, COMMENT, and SHARE any recipe available on
-      the website.
+1.3 Reactions & Comments
+    - Reactions on recipes, wall posts and forum topics: like 👍, love ❤️,
+      yum 😋, wow 🤩 (one per user per item, toggleable).
+    - Comments on recipes, wall posts and forum topics.
+    - Comments moderated post-publish (admin can hide/restore/delete).
 
-1.4 Forum Participation
-    - Registered users can participate in forum discussions:
-      start new topics, comment on, and react to ongoing discussions.
+1.4 Buddy System
+    - Send buddy request → recipient gets in-app notification → accept/reject.
+    - Accepted buddies appear in each other's Buddy List.
+    - Buddy Feed: shows all activity from accepted buddies.
+    - Find Buddies page to discover other members.
 
-1.5 Buddy Requests
-    - A registered user can send a "BUDDY REQUEST" to another registered
-      user.
-    - The recipient receives a request NOTIFICATION and can ACCEPT or
-      REJECT it.
+1.5 Private Messaging
+    - One-on-one real-time-style chat between buddy-connected users.
+    - Unread message count in header nav.
+    - Messages page shows conversation threads.
 
-1.6 Buddy List & Feed Visibility
-    - Accepted buddies appear in each other's "Buddy List" on their
-      profiles.
-    - Once buddies, all posts of both users become visible to each other
-      (Facebook-style friend feed).
+1.6 Notifications (In-App)
+    - Bell icon in header shows unread count (notifications + announcements).
+    - Notification types: buddy request, recipe approved/rejected, comment,
+      reaction, message received, system announcement.
+    - Notifications page: shows all notifications + unread admin announcements.
+    - Per-item Mark as Read + Dismiss. Mark All as Read.
+    - Announcements from admin persist until user dismisses them.
 
---------------------------------------------------------------------------------
+================================================================================
 MODULE 2 — RECIPE MANAGEMENT
---------------------------------------------------------------------------------
-2.1 Recipe Posting
-    - Registered users post recipes via a dedicated page titled
-      "Post a New Recipe".
+================================================================================
 
-2.2 Recipe Post Page — Sections (in order):
+2.1 Recipe Submission (Post a New Recipe)
+    Non-admin submissions go to status = pending (hidden from public until
+    admin approves). Admin submissions go live immediately.
 
     SECTION 1 — Basic Details
-      - Recipe Name ........................ MANDATORY
-      - Main Picture of the Recipe ......... MANDATORY
-      - Short Description / Story .......... OPTIONAL
+      - Recipe Name (mandatory, max 150 chars).
+      - Main picture (mandatory on create; optional on edit). JPG/PNG/WEBP/GIF,
+        max 5 MB.
+      - Short description / story behind the dish (optional, max 3000 chars).
+      - YouTube video link (optional — embeds on recipe page + adds VideoObject
+        to JSON-LD schema).
 
-    SECTION 2 — Ingredients
-      - Ingredients with quantities.
-      - Autocomplete: typing the first 3 letters of an ingredient shows
-        matches from the master ingredient list.
-      - If not found, the user can type a new ingredient name in the same
-        box; it is added to the master list and becomes selectable by ALL
-        users for future recipe posts.
-      - The same autocomplete + add-new-to-master-list behavior applies
-        to: Category, Cuisine Type, and Origin fields.
+    SECTION 2 — Ingredients (mandatory — minimum 1)
+      - Ingredient name + quantity per row. Add/remove rows dynamically.
+      - Typeahead autocomplete (3-letter trigger) against master ingredients list.
+      - New ingredient names auto-added to master list for future use.
 
-    SECTION 3 — General Information (OPTIONAL)
-      - Category, Cuisine Type, Origin.
+    SECTION 3 — General Information (optional)
+      - Category, Cuisine Type, Origin — all typeahead with master lists.
+      - Prep Time (minutes) — optional, used in SEO schema (ISO 8601 format).
+      - Cook Time (minutes) — optional, used in SEO schema.
 
-    SECTION 4 — Step-by-Step Method
-      - Users add steps one by one ("Add Step" for each next step).
-      - Each step has an OPTIONAL media upload (picture or short video).
+    SECTION 4 — Step-by-Step Method (mandatory — minimum 1 step)
+      - Each step: instruction text + optional photo or short video (max 25 MB).
+      - Steps can be added, reordered, removed.
 
-    SECTION 5 — Extras (OPTIONAL)
-      - Overall verdict / hidden information / special instructions /
-        trivia related to the recipe.
+    SECTION 5 — Verdict / Secrets / Trivia (optional, max 3000 chars)
 
-    SECTION 6 — "Post Recipe" button.
+    On submit (non-admin): flash "Your recipe is pending admin approval."
+    On submit (admin): goes live immediately + email notifications sent.
 
---------------------------------------------------------------------------------
-MODULE 3 — FORUM SECTION
---------------------------------------------------------------------------------
-3.1 Forum Board
-    - Registered users have a forum board where they can:
-      - Start a new FOOD topic (choose from predefined topics or add a
-        new one).
-      - Comment on and react to existing/ongoing forum discussions.
+2.2 Recipe Display Page
+    - Hero: 4:3 image frame (object-fit: cover). Click image → fullscreen
+      lightbox with fade-in animation (Esc or click outside to close).
+    - Blurred background fill behind the contained image using second <img>.
+    - YouTube video embedded below hero if URL provided.
+    - Ingredients list, step-by-step collapsible method, verdict section.
+    - Reactions bar + comments section.
+    - Share modal: WhatsApp, Facebook, X/Twitter, copy link, repost to wall.
+    - Edit/Delete buttons for recipe owner and admins.
 
-3.2 Reference
-    - Use https://www.plattershare.com ONLY as a reference for website
-      flow. Do NOT copy any data, design, or content from that site.
+2.3 Recipe Listing & Search
+    - Filterable by category, cuisine, origin.
+    - Live search by recipe name (AJAX, header search bar).
+    - Pagination (12 per page default).
+    - Excludes pending and removed recipes for public visitors.
 
---------------------------------------------------------------------------------
-DELIVERY & DEPLOYMENT REQUIREMENTS
---------------------------------------------------------------------------------
-- Fully professional, polished, and directly publishable website.
-- Complete database integration (schema, migrations/SQL, seed data as
-  needed).
-- All parameters/configuration required to publish on an EXISTING
-  Hostinger.com hosting account (deployment instructions, environment
-  configuration, file structure compatible with Hostinger hosting).
+2.4 Recipe Card
+    - 16:10 image, recipe title, category · cuisine meta, author avatar + name,
+      reaction count, comment count.
+    - Featured recipes marked with orange star badge.
 
---------------------------------------------------------------------------------
-PROCESS INSTRUCTION
---------------------------------------------------------------------------------
-- Before building, ask clarifying questions until you are 99% sure about
-  the requirements, then proceed with implementation.
+================================================================================
+MODULE 3 — FORUM
+================================================================================
+- Predefined forum categories (seeded): Fusion Experiments, Recipe Help &
+  Substitutions, Kitchen Gear & Techniques, Veg Lifestyle & Nutrition,
+  Food Stories & Memories.
+- Registered users can start new topics and reply.
+- Reactions on topics. View count tracked.
+- Forum moderated post-publish (admin hide/restore/delete).
+- Hot topics shown on homepage.
+
+================================================================================
+MODULE 4 — HOMEPAGE
+================================================================================
+- Compact hero section (reduced height): tagline, CTA buttons, site stats
+  (recipe count, member count, topic count, 100% veg badge).
+- Star Recipe Ribbon (below hero): slim 80px strip showing the top recipe
+  of the week. See Module 9 for full spec.
+- Featured Recipes grid (is_featured = 1 recipes).
+- Fresh from the Kitchen grid (latest 8 published recipes).
+- Forum hot topics (latest 5 forum topics with reply counts).
+- Join banner for non-logged-in visitors.
+
+================================================================================
+MODULE 5 — ADMIN PANEL (/admin/)
+================================================================================
+Admin panel is accessible only to users with is_admin = 1.
+
+5.1 Dashboard (/admin/index.php)
+    - Stats: Members, Published Recipes, Forum Topics, Comments, Reactions,
+      Buddy Pairs, Wall Posts, Ingredients.
+    - Newest members list, latest recipes list.
+
+5.2 Content Moderation (/admin/content.php) — Tabbed interface
+    Tab 1 — PENDING APPROVAL
+      - All pending user-submitted recipes with thumbnail, title, author,
+        category, cuisine, submit time, story excerpt.
+      - Preview button (opens recipe in new tab).
+      - Approve button → recipe goes live + in-app notification + email
+        notifications sent to subscribers.
+      - Reject button → shows textarea for optional reason → recipe removed +
+        in-app notification with reason sent to author.
+
+    Tab 2 — RECIPES
+      - All published/hidden recipes with title, author, views, status.
+      - Actions per recipe: Feature / Un-feature, ⭐ Set as Star Recipe,
+        Hide / Restore, Permanent Delete.
+
+    Tab 3 — COMMENTS
+      - All comments (recipe + forum + wall) with body, author, target.
+      - Actions: Hide / Restore / Delete.
+
+    Tab 4 — FORUM TOPICS
+      - All topics with title, author, views, replies, status.
+      - Actions: Hide / Restore / Delete (cascades replies).
+
+    Tab 5 — WALL POSTS
+      - All wall posts with body, author, comment count, status.
+      - Actions: Hide / Restore / Delete (cascades comments).
+
+    Star Recipe Settings panel (above tabs):
+      - Label text field (default "Star Recipe" — admin changes to
+        "Recipe of the Week", "Dish of the Day", etc.)
+      - Mode: Auto (highest score this week) or Manual (admin picks).
+      - Auto score = (reactions in last 7 days × 3) + (total views / 10).
+
+5.3 Users (/admin/users.php)
+    - List all users with username, email, join date, is_admin, is_banned.
+    - Ban/Unban, Promote to Admin / Demote, View Profile.
+
+5.4 Announcements (/admin/announcements.php)
+    - Create push announcement: Title (required) + Message Body.
+    - Sent to ALL registered users — appears in their notification bell.
+    - History list: shows all announcements with read count, dismissed count.
+    - Hard Delete from DB (removes announcement + all read records).
+    - DB tables: announcements (id, title, body, created_by, created_at,
+      is_deleted) + announcement_reads (user_id, announcement_id,
+      is_dismissed, created_at).
+
+5.5 Gallery (/admin/gallery.php)
+    - Upload up to 200 images (multi-select supported).
+    - Set/edit caption per image. Delete individual images.
+    - Images display on About Us page in masonry grid.
+    - DB table: gallery (id, image, caption, sort_order, created_at, created_by).
+
+5.6 Import Tool (/admin/import-blogspot.php)
+    - Bulk import from bosketsalimentos.blogspot.com Blogger JSON feed.
+    - Paginated fetch (50 per batch). Duplicate detection by title.
+    - Downloads images from Blogger CDN to uploads/recipes/.
+    - Maps Blogspot labels → category/cuisine/origin taxonomy.
+    - Saves as draft. Admin reviews and publishes.
+
+5.7 Image Repair (/admin/repair-images.php)
+    - Re-downloads missing recipe images from Blogspot feed.
+    - Matches posts to DB recipes by title. Updates recipes.image DB field.
+
+5.8 CMS — Pages (/admin/cms-pages.php)
+    - Create, edit, publish, delete static pages with HTML textarea editor.
+    - Fields: title, slug (auto-generated), body HTML, meta description,
+      visibility (public/members), status (draft/published).
+    - Auto-seeds "About Us" and "Contact Us — Intro" pages on first visit.
+    - Published pages render at /page.php?slug=... with full site layout.
+
+5.9 CMS — Appearance (/admin/cms-appearance.php)
+    - Default theme: Light / Dark.
+    - Visitor toggle: show/hide light-dark toggle button for site visitors.
+    - Font pairing: Playfair Display + Inter (default) or 4 other options.
+    - Brand colours: primary green + accent orange (output as CSS :root
+      variable overrides in <head> — applies site-wide instantly).
+    - Settings stored in cms_settings table (key-value).
+
+5.10 CMS — Menus (/admin/cms-menus.php)
+    - Add/delete/reorder navigation and footer menu items.
+    - Link type: CMS page or custom URL.
+    - Open in new tab option.
+    - Locations: top navigation bar + footer.
+
+5.11 Master Lists (/admin/masters.php)
+    - Manage ingredients, categories, cuisines, origins master lists.
+    - Add, rename, merge.
+
+5.12 Messages (/admin/messages.php)
+    - View contact form submissions.
+
+================================================================================
+MODULE 6 — STAR RECIPE (Homepage Feature)
+================================================================================
+- star_recipe DB table (one row): recipe_id, label, mode, updated_at, updated_by.
+- Auto mode: every page load computes highest-scoring recipe.
+  Score = (reactions in last 7 days × 3) + (total views / 10).
+  Orders DESC, picks top 1 published recipe.
+- Manual mode: admin clicks "⭐ Set Star" on any recipe in admin/content.php.
+- Homepage ribbon: slim dark strip (~80px) with blurred thumbnail,
+  ⭐ badge + admin-configurable label, recipe title, category/cuisine tags,
+  author name, "View Recipe →" button. Responsive (collapses on mobile).
+
+================================================================================
+MODULE 7 — EMAIL NOTIFICATIONS
+================================================================================
+- Opt-in at registration (checkbox) and manageable in Account Settings.
+- email_notify TINYINT(1) DEFAULT 0 and email_token VARCHAR(64) on users table.
+- Trigger 1: Admin posts recipe → email ALL subscribed users.
+- Trigger 2: Any user posts recipe → email subscribed accepted buddies.
+- HTML email template: site header, recipe image, title, story excerpt,
+  "View Recipe →" button, unsubscribe link.
+- From: noreply@bosketsalimentos.com (Hostinger domain email).
+- Unsubscribe: /unsubscribe.php?token=XXXX → sets email_notify = 0.
+- Users can re-subscribe via Account Settings.
+
+================================================================================
+MODULE 8 — SEO
+================================================================================
+
+8.1 Recipe JSON-LD (Schema.org/Recipe) — on every recipe page
+    Fields: name, description, author (Person), datePublished, keywords,
+    recipeIngredient (array), recipeInstructions (HowToStep array),
+    recipeCategory, recipeCuisine, image (array of URLs).
+    Conditional: prepTime, cookTime, totalTime (ISO 8601 if set),
+    VideoObject (if YouTube URL present), aggregateRating (if reactions > 0).
+
+8.2 WebSite Schema — on every page (via cms_head_html())
+    WebSite + SearchAction (target: /recipes.php?q={search_term_string}).
+    Enables Google sitelinks search box.
+
+8.3 OG / Twitter meta tags — on every page
+    og:type = article on recipe pages; website elsewhere.
+    og:image, og:title, og:description, og:url on all pages.
+
+8.4 Sitemap (/sitemap.php)
+    Dynamic XML: homepage, recipes.php, forum.php, all recipe pages,
+    all forum topic pages, about.php, contact.php, privacy-policy.php.
+    changefreq and priority per URL type.
+
+8.5 robots.txt
+    Disallows: /admin/, /api/, /includes/, settings, notifications, feed,
+    buddies, messages, auth pages, install.php, unsubscribe.php.
+    Sitemap: https://www.bosketsalimentos.com/sitemap.php (absolute URL).
+
+================================================================================
+MODULE 9 — PERFORMANCE (.htaccess)
+================================================================================
+- mod_deflate: gzip compress HTML, CSS, JS, JSON, SVG, fonts (~70% smaller).
+- mod_expires + Cache-Control:
+    Images / video / fonts: 6 months (immutable).
+    CSS / JS: 1 year (safe — versioned with ?v=N query string).
+    PHP pages: no-store, no-cache.
+- Security headers: X-Content-Type-Options, X-Frame-Options (SAMEORIGIN),
+  Referrer-Policy, Permissions-Policy, X-XSS-Protection.
+- Keep-alive header. ETags disabled.
+- ErrorDocument 404 /index.php.
+- PHP limits: upload_max_filesize 30M, post_max_size 64M, max_execution_time 120.
+
+================================================================================
+MODULE 10 — GALLERY (About Us Page)
+================================================================================
+- Admin uploads up to 200 images via /admin/gallery.php.
+- About Us page (/about.php) renders gallery at bottom when images exist.
+- Masonry grid: 3 columns desktop, 2 tablet, 1 mobile. Column-gap: 14px.
+- Hover: image scales 1.03×, caption fades in from bottom gradient overlay.
+- Click: fullscreen lightbox overlay (Esc or click outside to close).
+- Lazy loading on all gallery images.
+
+================================================================================
+MODULE 11 — PRIVACY POLICY (/privacy-policy.php)
+================================================================================
+13-section privacy policy exclusively authored by Bosket's Alimentos:
+1. Who We Are (Bangalore, India. Contact: privacy@bosketsalimentos.com)
+2. Information Collected (account, profile, content, session, automatic)
+3. How We Use It (no selling/renting data)
+4. Cookies (only boskets_sid session + boskets-theme local storage)
+5. Android App (WebView — no independent camera/contacts/location access)
+6. Data Sharing (public content, Hostinger hosting, OAuth providers, legal)
+7. Data Retention (active account, 12-month contact messages, 30-day logs)
+8. Your Rights (access, rectify, delete, opt-out, portability — 30-day response)
+9. Security (bcrypt, HTTPS, admin restrictions, protected config files)
+10. Children's Privacy (not directed at under-13)
+11. Third-Party Links
+12. Policy Changes
+13. Contact Us
+URL: https://www.bosketsalimentos.com/privacy-policy.php
+Link in site footer and required for Google Play Store submission.
+
+================================================================================
+MODULE 12 — ANDROID APPLICATION
+================================================================================
+Package : com.bosketsalimentos.app
+Version : 1.0.3 (versionCode 4)
+Stack   : Kotlin + Android WebView
+
+WebView settings (MainActivity.kt):
+  - javaScriptEnabled = true
+  - domStorageEnabled = true
+  - useWideViewPort = true          (honours <meta name="viewport">)
+  - loadWithOverviewMode = true     (scales page to fit screen on first load)
+  - Custom user agent string: "... BosketsApp/1.0.3"
+
+Signing:
+  - Keystore: boskets-release.keystore
+  - Alias: boskets
+
+.gitattributes:
+  - *.apk, *.aab, *.jks, *.keystore marked as binary (prevents CRLF corruption)
+
+Google Play Store submission:
+  - App type: App, Category: Food & Drink, Price: Free
+  - Privacy policy URL: https://www.bosketsalimentos.com/privacy-policy.php
+  - Store icon: 512×512 PNG (no transparent background)
+  - Feature graphic: 1024×500 PNG
+  - Minimum 2 screenshots required
+
+================================================================================
+DATABASE SCHEMA — TABLES
+================================================================================
+users               — id, username, email, password_hash, display_name, bio,
+                      avatar, is_admin, is_banned, email_notify, email_token,
+                      created_at
+buddies             — requester_id, addressee_id, status, created/responded_at
+recipes             — id, user_id, title, slug, image, story, youtube_url,
+                      prep_time, cook_time, category_id, cuisine_id, origin_id,
+                      verdict, status (pending/published/removed), is_featured,
+                      views, created_at
+recipe_ingredients  — recipe_id, ingredient_id, quantity, sort_order
+recipe_steps        — recipe_id, step_no, instruction, media, media_type
+ingredients         — id, name, created_by
+categories          — id, name, created_by
+cuisines            — id, name, created_by
+origins             — id, name, created_by
+wall_posts          — id, user_id, body, image, shared_recipe_id, status
+forum_categories    — id, name, description, created_by
+forum_topics        — id, category_id, user_id, title, body, views, status
+comments            — id, user_id, target_type, target_id, body, status
+reactions           — id, user_id, target_type, target_id, reaction, created_at
+notifications       — id, user_id, actor_id, type, target_type, target_id,
+                      message, is_read, created_at
+announcements       — id, title, body, created_by, created_at, is_deleted
+announcement_reads  — user_id, announcement_id, is_dismissed, created_at
+gallery             — id, image, caption, sort_order, created_at, created_by
+star_recipe         — id, recipe_id, label, mode, updated_at, updated_by
+messages            — id, sender_id, recipient_id, body, is_read, created_at
+contact_messages    — id, user_id, name, email, subject, message, is_read
+oauth_accounts      — id, user_id, provider, provider_uid, email, created_at
+password_resets     — id, user_id, token_hash, expires_at, used_at
+cms_pages           — id, title, slug, body, meta_description, visibility,
+                      status, created_by, created_at, updated_at
+cms_menu_items      — id, label, location, link_type, page_id, url, new_tab,
+                      sort_order, is_active, created_at
+cms_settings        — name (PK), value
+
+================================================================================
+KEY HELPER FUNCTIONS
+================================================================================
+db()                  — singleton PDO connection
+current_user()        — cached session user row or null
+is_logged_in()        — bool
+is_admin()            — bool
+require_login()       — returns user or redirects to login.php
+require_admin()       — returns user or redirects to index.php
+url($path)            — absolute URL from any context
+base_url()            — site root URL (strips /admin, /api, /includes)
+redirect($path)       — header Location + exit
+e($str)               — htmlspecialchars wrapper
+flash($type, $msg)    — session flash message
+take_flashes()        — consume and return flash messages
+avatar_html($u, $sz)  — renders avatar img or initials fallback
+time_ago($dt)         — "3 minutes ago" style
+handle_upload($field, $type, $subdir) — validates + moves uploaded file
+delete_upload($path)  — removes file from uploads/
+find_or_create($table, $name, $uid) — get or insert taxonomy item
+slugify($text)        — lowercase hyphen slug
+notification_url($n)  — resolve notification to target URL
+unread_count($uid)    — count unread notifications
+unread_messages_count($uid) — count unread messages
+unread_announcements_count($uid) — count unread announcements
+send_recipe_notification_emails($recipeId, $authorId) — email trigger
+ensure_email_token($uid) — generate/return unsubscribe token
+mins_to_iso8601($mins) — 90 → "PT1H30M"
+get_star_recipe()     — returns current star recipe with full data
+cms_get_page_body($slug) — returns published CMS page body or null
+cms_head_html()       — outputs theme CSS, fonts, colour overrides, anti-FOUC JS
+
+================================================================================
+UPLOAD FOLDER STRUCTURE
+================================================================================
+uploads/
+  recipes/    — recipe cover images + step media
+  avatars/    — user profile pictures
+  steps/      — step-by-step media files
+  gallery/    — about us gallery photos
+  wall/       — wall post images
+
+All subfolders protected with index.html (empty file, prevents listing).
+uploads/ excluded from deployment ZIP (preserved between deploys).
+
+================================================================================
+DEPLOYMENT
+================================================================================
+Method  : ZIP → hPanel File Manager → Extract (Overwrite existing files)
+Config  : config.php (DB_HOST, DB_NAME, DB_USER, DB_PASS, SITE_URL,
+          MAIL_FROM, Google/Facebook OAuth keys)
+Install : Visit /install.php once to create schema + admin account.
+          DELETE install.php after running (critical).
+CSS     : Versioned with ?v=N on stylesheet link in includes/header.php.
+          Bump N when deploying CSS changes.
+Uploads : Create uploads/ folder and subfolders manually in hPanel after
+          fresh install (excluded from ZIP).
+
+================================================================================
+FUTURE ROADMAP
+================================================================================
+- Full UI rewrite: Next.js + shadcn/ui (frontend) + PHP REST API (backend)
+  Estimated timeline: 10–14 days (Claude) / 3–4 months (human team)
+- Recipe ratings: 1–5 star system replacing emoji-only reactions
+- Nutrition data field (optional, or via nutrition API)
+- Recipe collections / user cookbooks
+- Weekly newsletter digest email
+- Social sharing buttons on recipe cards (homepage + listing)
+- Bulk prep/cook time editor for admin (batch update imported recipes)
+
+================================================================================
+END OF PROMPT
 ================================================================================
