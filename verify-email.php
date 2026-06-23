@@ -21,8 +21,12 @@ if ($token) {
             db()->prepare(
                 "UPDATE users SET email_verified_at = NOW(), verify_token = NULL, verify_token_expires = NULL WHERE id = ?"
             )->execute([$user['id']]);
-            $status = 'success';
+            // Auto-login the user immediately after verification
+            $_SESSION['user_id'] = (int)$user['id'];
+            session_regenerate_id(true);
+            $status      = 'success';
             $displayName = $user['display_name'];
+            $username    = $user['username'];
         }
     } else {
         $status = 'expired';
@@ -36,8 +40,8 @@ include __DIR__ . '/includes/header.php';
   <?php if ($status === 'success'): ?>
     <div style="font-size:56px;margin-bottom:16px">✅</div>
     <h2>Email verified!</h2>
-    <p class="muted">Your account is now active, <?= e($displayName ?? 'there') ?>. Welcome to <?= e(SITE_NAME) ?>!</p>
-    <a class="btn btn-primary" href="<?= e(url('login.php')) ?>" style="margin-top:20px">Sign in now</a>
+    <p class="muted">Your account is now active, <?= e($displayName ?? 'there') ?>. Welcome to <?= e(SITE_NAME) ?>! 🌿</p>
+    <a class="btn btn-primary" href="<?= e(url('profile.php?u=' . urlencode($username ?? ''))) ?>" style="margin-top:20px">Go to my profile →</a>
 
   <?php elseif ($status === 'already'): ?>
     <div style="font-size:56px;margin-bottom:16px">☑️</div>

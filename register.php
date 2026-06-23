@@ -31,10 +31,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($old['display_name'] === '' || mb_strlen($old['display_name']) > 60) {
         $errors[] = 'Please enter your display name (max 60 characters).';
     }
-    // Phone: must be present and at least 7 digits after stripping non-digits
-    $phoneDigits = preg_replace('/\D/', '', $old['phone']);
-    if (strlen($phoneDigits) < 7 || strlen($old['phone']) < 4) {
-        $errors[] = 'Please enter a valid mobile number with country code.';
+    // Phone: optional — only validate if provided
+    if ($old['phone']) {
+        $phoneDigits = preg_replace('/\D/', '', $old['phone']);
+        if (strlen($phoneDigits) < 7) {
+            $errors[] = 'The mobile number you entered doesn\'t look valid. Please check it or leave it blank.';
+        }
     }
     if (strlen($password) < 8) {
         $errors[] = 'Password must be at least 8 characters.';
@@ -94,10 +96,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $emailNotify, $emailToken,
             ]);
             $newId = (int)db()->lastInsertId();
-            $_SESSION['user_id'] = $newId;
-            session_regenerate_id(true);
-            flash('success', 'Welcome to ' . SITE_NAME . ', ' . $old['display_name'] . '! 🌿 Your kitchen awaits.');
-            redirect('profile.php?u=' . urlencode($old['username']));
+            // Send verification email — do NOT log in yet
+            $verifyToken = generate_verify_token($newId);
+            send_verification_email($old['email'], $old['display_name'], $verifyToken);
+            flash('info', '🌿 Account created! We\'ve sent a verification email to <strong>' . e($old['email']) . '</strong>. Please check your inbox and click the link to activate your account before signing in.');
+            redirect('login.php');
         }
     }
 }
@@ -205,8 +208,8 @@ include __DIR__ . '/includes/header.php';
                value="<?= e($old['email']) ?>" placeholder="you@example.com">
       </label>
 
-      <label class="field">Mobile number <span class="req">*</span>
-        <small style="color:var(--ink-soft);font-size:12px">Required — select your country code then enter number</small>
+      <label class="field">Mobile number <small style="color:var(--ink-soft)">Optional</small>
+        <small style="color:var(--ink-soft);font-size:12px">Select your country code then enter number</small>
         <input type="tel" id="phone_input" placeholder="9876543210"
                value="<?= e(preg_replace('/^\+\d+\s*/', '', $old['phone'])) ?>">
         <?php if ($old['phone']): ?><input type="hidden" name="phone_full" value="<?= e($old['phone']) ?>"><?php endif; ?>
@@ -249,20 +252,24 @@ var iti = window.intlTelInput(phoneInput, {
   preferredCountries: ['in', 'us', 'gb', 'au', 'ca', 'sg', 'ae'],
 });
 
-// Before form submit, put full international number into hidden field
+// Before form submit, store full international number if user entered one
 document.querySelector('form').addEventListener('submit', function(e) {
-  var fullNum = iti.getNumber(); // e.g. +919876543210
-  document.getElementById('phone_full').value = fullNum;
-
-  // Basic validation
-  if (!iti.isValidNumber()) {
-    e.preventDefault();
-    phoneInput.style.borderColor = '#e74c3c';
-    phoneInput.focus();
-    alert('Please enter a valid mobile number.');
-    return false;
+  var rawNum = phoneInput.value.trim();
+  if (rawNum) {
+    // Phone entered — validate format
+    if (!iti.isValidNumber()) {
+      e.preventDefault();
+      phoneInput.style.borderColor = '#e74c3c';
+      phoneInput.focus();
+      alert('The mobile number you entered doesn\'t look valid. Please check and try again, or leave it blank.');
+      return false;
+    }
+    document.getElementById('phone_full').value = iti.getNumber();
+    phoneInput.style.borderColor = '';
+  } else {
+    // Phone left blank — that's fine, clear the hidden field
+    document.getElementById('phone_full').value = '';
   }
-  phoneInput.style.borderColor = '';
 });
 </script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
