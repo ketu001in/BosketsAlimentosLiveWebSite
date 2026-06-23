@@ -451,6 +451,61 @@ function ensure_email_notify_columns(): void
     }
 }
 
+/** Add phone column (international format) + verification columns to users table. */
+function ensure_phone_columns(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    if (!db()->query("SHOW COLUMNS FROM users LIKE 'phone'")->fetch()) {
+        db()->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(25) NULL AFTER email_token");
+    }
+    if (!db()->query("SHOW COLUMNS FROM users LIKE 'email_verified_at'")->fetch()) {
+        db()->exec("ALTER TABLE users ADD COLUMN email_verified_at DATETIME NULL AFTER phone");
+    }
+    if (!db()->query("SHOW COLUMNS FROM users LIKE 'phone_verified_at'")->fetch()) {
+        db()->exec("ALTER TABLE users ADD COLUMN phone_verified_at DATETIME NULL AFTER email_verified_at");
+    }
+    if (!db()->query("SHOW COLUMNS FROM users LIKE 'verify_token'")->fetch()) {
+        db()->exec("ALTER TABLE users ADD COLUMN verify_token VARCHAR(64) NULL AFTER phone_verified_at");
+    }
+    if (!db()->query("SHOW COLUMNS FROM users LIKE 'verify_token_expires'")->fetch()) {
+        db()->exec("ALTER TABLE users ADD COLUMN verify_token_expires DATETIME NULL AFTER verify_token");
+    }
+}
+
+/** Generate and store a fresh email verification token for a user. */
+function generate_verify_token(int $userId): string
+{
+    $token = bin2hex(random_bytes(32));
+    db()->prepare("UPDATE users SET verify_token=?, verify_token_expires=DATE_ADD(NOW(), INTERVAL 24 HOUR) WHERE id=?")
+        ->execute([$token, $userId]);
+    return $token;
+}
+
+/** Send verification email to a user. */
+function send_verification_email(string $to, string $displayName, string $token): void
+{
+    $siteName = defined('SITE_NAME') ? SITE_NAME : "Bosket's Alimentos";
+    $from     = (defined('MAIL_FROM') && MAIL_FROM) ? MAIL_FROM : 'noreply@bosketsalimentos.com';
+    $link     = base_url() . '/verify-email.php?token=' . urlencode($token);
+    $subject  = 'Verify your ' . $siteName . ' account';
+    $name     = htmlspecialchars($displayName ?: 'there');
+    $body = '<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f0f4f2;padding:20px">'
+          . '<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)">'
+          . '<div style="background:linear-gradient(135deg,#1f6e43,#3fa796);padding:26px 30px">'
+          . '<span style="color:#fff;font-size:20px;font-weight:700">' . htmlspecialchars($siteName) . '</span></div>'
+          . '<div style="padding:28px 30px">'
+          . '<p style="color:#333;margin-top:0">Hi ' . $name . ',</p>'
+          . '<p style="color:#333">Thanks for joining! Please verify your email address to activate your account.</p>'
+          . '<a href="' . htmlspecialchars($link) . '" style="display:inline-block;background:#3fa796;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:bold;margin-top:8px">Verify my account →</a>'
+          . '<p style="color:#888;font-size:12px;margin-top:24px">This link expires in 24 hours. If you didn\'t sign up, ignore this email.</p>'
+          . '</div></div></body></html>';
+    $headers = implode("\r\n", ['MIME-Version: 1.0','Content-Type: text/html; charset=UTF-8',
+        'From: ' . $siteName . ' <' . $from . '>','Reply-To: ' . $from]);
+    @mail($to, $subject, $body, $headers);
+}
+
 /** Generate a unique unsubscribe token for a user (idempotent). */
 function ensure_email_token(int $userId): string
 {
