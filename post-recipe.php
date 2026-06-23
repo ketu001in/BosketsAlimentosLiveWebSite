@@ -223,6 +223,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['delete_id'])) {
             } else {
                 flash('success', 'Your recipe is live! 🎉 Share it with your buddies.');
                 send_recipe_notification_emails($recipeId, $uid);
+                // Ping Google + Bing so they index the new recipe faster
+                $sitemapUrl = base_url() . '/sitemap.php';
+                @file_get_contents('https://www.google.com/ping?sitemap=' . urlencode($sitemapUrl));
+                @file_get_contents('https://www.bing.com/ping?sitemap='   . urlencode($sitemapUrl));
             }
             redirect('recipe.php?id=' . $recipeId);
         } catch (RuntimeException $ex) {

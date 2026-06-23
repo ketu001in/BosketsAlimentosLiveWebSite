@@ -56,6 +56,18 @@ $pageDesc = $_storyText !== ''
 $pageImage = $r['image'] ?: '';
 $ogType    = 'article';
 
+// ── Breadcrumb JSON-LD ───────────────────────────────────────────────────────
+$breadcrumbSchema = [
+    '@context' => 'https://schema.org',
+    '@type'    => 'BreadcrumbList',
+    'itemListElement' => [
+        ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home',    'item' => url('index.php')],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Recipes', 'item' => url('recipes.php')],
+        ['@type' => 'ListItem', 'position' => 3, 'name' => $r['title']],
+    ],
+];
+$breadcrumbJson = '<script type="application/ld+json">' . json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+
 // ── Recipe JSON-LD structured data ───────────────────────────────────────────
 $schemaIngs   = [];
 foreach ($ingredients as $ing) {
@@ -114,7 +126,7 @@ if ($rCount > 0) {
 // Remove nulls/empty
 foreach ($recipeSchema as $k => $v) { if ($v === null || $v === '' || $v === []) unset($recipeSchema[$k]); }
 
-$schemaJson = '<script type="application/ld+json">' . json_encode($recipeSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+$schemaJson = $breadcrumbJson . '<script type="application/ld+json">' . json_encode($recipeSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 include __DIR__ . '/includes/header.php';
 ?>

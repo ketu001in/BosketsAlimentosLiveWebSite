@@ -27,6 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 )->execute([$rec['user_id'], $admin['id'], $id,
                     'Your recipe "' . mb_strimwidth($rec['title'], 0, 60, '…') . '" has been approved and is now live! 🎉']);
                 send_recipe_notification_emails($id, (int)$rec['user_id']);
+                // Ping Google + Bing sitemap when recipe goes live
+                $sitemapUrl = base_url() . '/sitemap.php';
+                @file_get_contents('https://www.google.com/ping?sitemap=' . urlencode($sitemapUrl));
+                @file_get_contents('https://www.bing.com/ping?sitemap='   . urlencode($sitemapUrl));
             }
             flash('success', 'Recipe approved and live.');
             break;
