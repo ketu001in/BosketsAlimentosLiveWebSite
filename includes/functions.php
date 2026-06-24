@@ -494,11 +494,11 @@ function generate_verify_token(int $userId): string
     return $token;
 }
 
-/** Send verification email to a user. */
+/** Send verification email to a user via SMTP (falls back to mail()). */
 function send_verification_email(string $to, string $displayName, string $token): void
 {
+    require_once __DIR__ . '/smtp.php';
     $siteName = defined('SITE_NAME') ? SITE_NAME : "Bosket's Alimentos";
-    $from     = (defined('MAIL_FROM') && MAIL_FROM) ? MAIL_FROM : 'noreply@bosketsalimentos.com';
     $link     = base_url() . '/verify-email.php?token=' . urlencode($token);
     $subject  = 'Verify your ' . $siteName . ' account';
     $name     = htmlspecialchars($displayName ?: 'there');
@@ -512,12 +512,7 @@ function send_verification_email(string $to, string $displayName, string $token)
           . '<a href="' . htmlspecialchars($link) . '" style="display:inline-block;background:#3fa796;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:bold;margin-top:8px">Verify my account →</a>'
           . '<p style="color:#888;font-size:12px;margin-top:24px">This link expires in 24 hours. If you didn\'t sign up, ignore this email.</p>'
           . '</div></div></body></html>';
-    $headers = implode("\r\n", ['MIME-Version: 1.0','Content-Type: text/html; charset=UTF-8',
-        'From: ' . $siteName . ' <' . $from . '>',
-        'Reply-To: ' . $from,
-        'X-Mailer: PHP/' . PHP_VERSION]);
-    // -f sets the envelope sender (Return-Path) — required by many Hostinger servers
-    @mail($to, $subject, $body, $headers, '-f' . $from);
+    smtp_send($to, $subject, $body);
 }
 
 /** Generate a unique unsubscribe token for a user (idempotent). */
