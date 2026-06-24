@@ -5,23 +5,37 @@ ensure_phone_columns();
 
 $token = trim($_GET['token'] ?? '');
 $status = 'invalid';
+$displayName = '';
+$username    = '';
 
 if ($token) {
+    // First: try to find a valid (not yet expired) token
     $st = db()->prepare(
-        "SELECT id, display_name, email_verified_at, verify_token_expires
-           FROM users WHERE verify_token = ? AND verify_token_expires > NOW()"
+        "SELECT id, username, display_name, email_verified_at, verify_token_expires
+           FROM users WHERE verify_token = ?"
     );
     $st->execute([$token]);
     $user = $st->fetch();
 
     if ($user) {
         if ($user['email_verified_at']) {
-            $status = 'already';
+            // Already verified — could be user clicking link a second time
+            $status      = 'already';
+            $displayName = $user['display_name'];
+            $username    = $user['username'];
+            // Log them in if not already
+            if (!is_logged_in()) {
+                $_SESSION['user_id'] = (int)$user['id'];
+                session_regenerate_id(true);
+            }
+        } elseif ($user['verify_token_expires'] && strtotime($user['verify_token_expires']) < time()) {
+            // Token exists but expired
+            $status = 'expired';
         } else {
+            // Valid token — verify now
             db()->prepare(
                 "UPDATE users SET email_verified_at = NOW(), verify_token = NULL, verify_token_expires = NULL WHERE id = ?"
             )->execute([$user['id']]);
-            // Auto-login the user immediately after verification
             $_SESSION['user_id'] = (int)$user['id'];
             session_regenerate_id(true);
             $status      = 'success';
@@ -29,25 +43,40 @@ if ($token) {
             $username    = $user['username'];
         }
     } else {
-        $status = 'expired';
+        // Token not found — check if user with this email is already verified
+        // (handles the case where token was cleared after successful verification)
+        $status = 'invalid';
     }
 }
 
-$pageTitle = 'Email Verified';
+// If already logged in and landing here, treat as success
+if ($status === 'invalid' && is_logged_in()) {
+    $me = current_user();
+    if ($me && $me['email_verified_at']) {
+        $status      = 'already';
+        $displayName = $me['display_name'];
+        $username    = $me['username'];
+    }
+}
+
+$pageTitle = 'Email Verification';
 include __DIR__ . '/includes/header.php';
 ?>
 <div class="container section" style="max-width:560px;text-align:center;padding:60px 20px">
+
   <?php if ($status === 'success'): ?>
     <div style="font-size:56px;margin-bottom:16px">✅</div>
     <h2>Email verified!</h2>
-    <p class="muted">Your account is now active, <?= e($displayName ?? 'there') ?>. Welcome to <?= e(SITE_NAME) ?>! 🌿</p>
-    <a class="btn btn-primary" href="<?= e(url('profile.php?u=' . urlencode($username ?? ''))) ?>" style="margin-top:20px">Go to my profile →</a>
+    <p class="muted">Your account is now active, <?= e($displayName ?: 'there') ?>. Welcome to <?= e(SITE_NAME) ?>! 🌿</p>
+    <a class="btn btn-primary" href="<?= e(url('profile.php?u=' . urlencode($username))) ?>" style="margin-top:20px">Go to my profile →</a>
 
   <?php elseif ($status === 'already'): ?>
-    <div style="font-size:56px;margin-bottom:16px">☑️</div>
-    <h2>Already verified</h2>
-    <p class="muted">Your email is already confirmed. You can sign in.</p>
-    <a class="btn btn-primary" href="<?= e(url('login.php')) ?>" style="margin-top:20px">Sign in</a>
+    <div style="font-size:56px;margin-bottom:16px">✅</div>
+    <h2>Email already verified!</h2>
+    <p class="muted">Your account is active<?= $displayName ? ', ' . e($displayName) : '' ?>. You can go straight to your profile.</p>
+    <a class="btn btn-primary" href="<?= e($username ? url('profile.php?u=' . urlencode($username)) : url('index.php')) ?>" style="margin-top:20px">
+      <?= $username ? 'Go to my profile →' : 'Go to homepage →' ?>
+    </a>
 
   <?php elseif ($status === 'expired'): ?>
     <div style="font-size:56px;margin-bottom:16px">⏰</div>
@@ -58,8 +87,12 @@ include __DIR__ . '/includes/header.php';
   <?php else: ?>
     <div style="font-size:56px;margin-bottom:16px">❌</div>
     <h2>Invalid link</h2>
-    <p class="muted">This verification link is not valid.</p>
-    <a class="btn btn-outline" href="<?= e(url('index.php')) ?>" style="margin-top:20px">Back to homepage</a>
+    <p class="muted">This verification link is not valid or has already been used.</p>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+      <a class="btn btn-primary"  href="<?= e(url('login.php')) ?>">Sign in</a>
+      <a class="btn btn-outline"  href="<?= e(url('resend-verification.php')) ?>">Resend email</a>
+    </div>
   <?php endif; ?>
+
 </div>
 <?php include __DIR__ . '/includes/footer.php'; ?>
