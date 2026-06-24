@@ -98,10 +98,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->beginTransaction();
 
                 // Insert recipe
+                $prepTime = (int)($r['prep_time'] ?? 0) ?: null;
+                $cookTime = (int)($r['cook_time'] ?? 0) ?: null;
+                $cuiId    = !empty($r['cuisine']) ? find_or_create('cuisines', $r['cuisine'], $adminId) : null;
                 $pdo->prepare(
-                    "INSERT INTO recipes (user_id, title, slug, image, story, category_id, status, created_at)
-                     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)"
-                )->execute([$adminId, $r['title'], $slug, $imgPath, $story ?: null, $catId,
+                    "INSERT INTO recipes (user_id, title, slug, image, story, prep_time, cook_time, category_id, cuisine_id, status, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)"
+                )->execute([$adminId, $r['title'], $slug, $imgPath, $story ?: null,
+                    $prepTime, $cookTime, $catId, $cuiId,
                     $r['published_at'] ?? date('Y-m-d H:i:s')]);
                 $recipeId = (int)$pdo->lastInsertId();
 
