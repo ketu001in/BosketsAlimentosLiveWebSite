@@ -3,6 +3,12 @@
  * Admin: Import WordPress recipes from exported ZIP.
  * Upload ZIP via this page → recipes go to 'pending' status.
  */
+// Raise limits for large ZIP uploads before anything else
+@ini_set('upload_max_filesize', '256M');
+@ini_set('post_max_size',       '256M');
+@ini_set('memory_limit',        '512M');
+@ini_set('max_execution_time',  '300');
+
 require_once __DIR__ . '/_admin.php';
 ensure_recipe_pending_status();
 

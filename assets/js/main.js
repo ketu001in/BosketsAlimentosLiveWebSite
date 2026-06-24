@@ -205,7 +205,10 @@
     const input = e.target;
     if (input.type !== 'file' || !input.files.length) return;
     const f = input.files[0];
+    // Only check images and videos — skip ZIP, PDF and other file types
+    const isImage = f.type.startsWith('image/');
     const isVideo = f.type.startsWith('video/');
+    if (!isImage && !isVideo) return;
     const limit = isVideo ? 25 * 1024 * 1024 : 5 * 1024 * 1024;
     if (f.size > limit) {
       toast((isVideo ? 'Videos' : 'Images') + ' must be ' + (isVideo ? '25' : '5') + ' MB or smaller.', false);
