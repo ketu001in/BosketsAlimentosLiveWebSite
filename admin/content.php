@@ -11,6 +11,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id     = (int)($_POST['id'] ?? 0);
     $pdo    = db();
 
+    // ── Bulk approve ──────────────────────────────────────────────────────────
+    if ($action === 'bulk_approve') {
+        $ids = array_map('intval', (array)($_POST['bulk_ids'] ?? []));
+        $approved = 0;
+        foreach ($ids as $bid) {
+            if (!$bid) continue;
+            $pdo->prepare("UPDATE recipes SET status='published' WHERE id=? AND status='pending'")->execute([$bid]);
+            if ($pdo->rowCount() > 0) {
+                $st = $pdo->prepare("SELECT user_id, title FROM recipes WHERE id=?");
+                $st->execute([$bid]);
+                $rec = $st->fetch();
+                if ($rec) {
+                    $pdo->prepare("INSERT INTO notifications (user_id,actor_id,type,target_type,target_id,message,created_at) VALUES (?,?,?,?,?,?,NOW())")
+                        ->execute([$rec['user_id'], $admin['id'], 'recipe_approved', 'recipe', $bid,
+                            'Your recipe "' . mb_strimwidth($rec['title'], 0, 60, '…') . '" has been approved and is now live! 🎉']);
+                    $sitemapUrl = base_url() . '/sitemap.php';
+                    @file_get_contents('https://www.google.com/ping?sitemap=' . urlencode($sitemapUrl));
+                }
+                $approved++;
+            }
+        }
+        flash('success', "$approved recipe(s) approved and live.");
+        redirect('admin/content.php?tab=pending');
+    }
+
     switch ($action) {
 
         // ── Pending recipe: approve ───────────────────────────────────────────
@@ -235,47 +260,67 @@ include dirname(__DIR__) . '/includes/header.php';
     <?php if (!$pending): ?>
       <div class="empty" style="padding:30px 0"><span class="big">✅</span>No recipes pending approval.</div>
     <?php else: ?>
-      <?php foreach ($pending as $r): ?>
-        <div class="pending-card">
-          <div class="pending-thumb">
-            <?php if ($r['image']): ?>
-              <img src="<?= e(url($r['image'])) ?>" alt="">
-            <?php else: ?>
-              <span style="font-size:32px">🍳</span>
-            <?php endif; ?>
-          </div>
-          <div class="pending-info">
-            <div class="pending-title"><?= e($r['title']) ?></div>
-            <div class="pending-meta">
-              by <strong>@<?= e($r['username']) ?></strong>
-              <?php if ($r['category_name']): ?> · <?= e($r['category_name']) ?><?php endif; ?>
-              <?php if ($r['cuisine_name']): ?> · <?= e($r['cuisine_name']) ?><?php endif; ?>
-              · submitted <?= e(time_ago($r['created_at'])) ?>
-            </div>
-            <?php if (trim($r['story'] ?? '')): ?>
-              <p class="pending-story"><?= e(mb_strimwidth(trim($r['story']), 0, 160, '…')) ?></p>
-            <?php endif; ?>
-          </div>
-          <div class="pending-actions">
-            <a class="btn btn-sm btn-ghost" href="<?= e(url('recipe.php?id=' . (int)$r['id'] . '&preview=1')) ?>" target="_blank">Preview</a>
-            <form method="post" style="display:inline">
-              <?= csrf_field() ?><input type="hidden" name="_tab" value="pending">
-              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-              <button class="btn btn-sm btn-primary" name="action" value="approve_recipe">✅ Approve</button>
-            </form>
-            <button class="btn btn-sm btn-danger" onclick="toggleReject(<?= (int)$r['id'] ?>)">❌ Reject</button>
-            <div id="reject-<?= (int)$r['id'] ?>" style="display:none;margin-top:10px">
-              <form method="post">
-                <?= csrf_field() ?><input type="hidden" name="_tab" value="pending">
-                <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-                <input type="hidden" name="action" value="reject_recipe">
-                <textarea name="reason" placeholder="Reason for rejection (optional — sent to author)" style="width:100%;min-height:70px;border-radius:6px;padding:8px;border:1px solid var(--line);font-size:13px;resize:vertical;background:var(--surface)"></textarea>
-                <button class="btn btn-sm btn-danger" type="submit" style="margin-top:6px">Confirm Rejection</button>
-              </form>
-            </div>
-          </div>
+      <!-- Bulk action toolbar -->
+      <form method="post" id="bulk-form">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="bulk_approve">
+        <input type="hidden" name="_tab" value="pending">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0 16px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer">
+            <input type="checkbox" id="select-all" onchange="document.querySelectorAll('.bulk-cb').forEach(c=>c.checked=this.checked)">
+            Select all (<?= count($pending) ?>)
+          </label>
+          <button type="submit" class="btn btn-sm btn-primary" onclick="return document.querySelectorAll('.bulk-cb:checked').length > 0 || (alert('Select at least one recipe.'), false)">
+            ✅ Approve Selected
+          </button>
+          <span id="selected-count" style="font-size:12px;color:var(--ink-soft)"></span>
         </div>
-      <?php endforeach; ?>
+
+        <?php foreach ($pending as $r): ?>
+          <div class="pending-card">
+            <div style="flex-shrink:0;padding-top:4px">
+              <input type="checkbox" class="bulk-cb" name="bulk_ids[]" value="<?= (int)$r['id'] ?>"
+                     onchange="document.getElementById('selected-count').textContent=document.querySelectorAll('.bulk-cb:checked').length+' selected'">
+            </div>
+            <div class="pending-thumb">
+              <?php if ($r['image']): ?>
+                <img src="<?= e(url($r['image'])) ?>" alt="">
+              <?php else: ?>
+                <span style="font-size:32px">🍳</span>
+              <?php endif; ?>
+            </div>
+            <div class="pending-info">
+              <div class="pending-title"><?= e($r['title']) ?></div>
+              <div class="pending-meta">
+                by <strong>@<?= e($r['username']) ?></strong>
+                <?php if ($r['category_name']): ?> · <?= e($r['category_name']) ?><?php endif; ?>
+                <?php if ($r['cuisine_name']): ?> · <?= e($r['cuisine_name']) ?><?php endif; ?>
+                · submitted <?= e(time_ago($r['created_at'])) ?>
+              </div>
+              <?php if (trim($r['story'] ?? '')): ?>
+                <p class="pending-story"><?= e(mb_strimwidth(trim($r['story']), 0, 160, '…')) ?></p>
+              <?php endif; ?>
+            </div>
+            <div class="pending-actions">
+              <a class="btn btn-sm btn-ghost" href="<?= e(url('recipe.php?id=' . (int)$r['id'])) ?>" target="_blank">Preview</a>
+              <button type="button" class="btn btn-sm btn-primary"
+                      onclick="document.querySelectorAll('.bulk-cb').forEach(c=>c.checked=false);this.closest('.pending-card').querySelector('.bulk-cb').checked=true;document.getElementById('bulk-form').submit()">
+                ✅ Approve
+              </button>
+              <button class="btn btn-sm btn-danger" type="button" onclick="toggleReject(<?= (int)$r['id'] ?>)">❌ Reject</button>
+              <div id="reject-<?= (int)$r['id'] ?>" style="display:none;margin-top:10px">
+                <form method="post">
+                  <?= csrf_field() ?><input type="hidden" name="_tab" value="pending">
+                  <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                  <input type="hidden" name="action" value="reject_recipe">
+                  <textarea name="reason" placeholder="Reason (optional — sent to author)" style="width:100%;min-height:60px;border-radius:6px;padding:8px;border:1px solid var(--line);font-size:13px;resize:vertical;background:var(--surface)"></textarea>
+                  <button class="btn btn-sm btn-danger" type="submit" style="margin-top:6px">Confirm Rejection</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </form>
     <?php endif; ?>
   </div>
 
