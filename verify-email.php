@@ -85,13 +85,15 @@ include __DIR__ . '/includes/header.php';
     <a class="btn btn-primary" href="<?= e(url('resend-verification.php')) ?>" style="margin-top:20px">Resend verification email</a>
 
   <?php else: ?>
-    <div style="font-size:56px;margin-bottom:16px">❌</div>
-    <h2>Invalid link</h2>
-    <p class="muted">This verification link is not valid or has already been used.</p>
-    <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
-      <a class="btn btn-primary"  href="<?= e(url('login.php')) ?>">Sign in</a>
-      <a class="btn btn-outline"  href="<?= e(url('resend-verification.php')) ?>">Resend email</a>
-    </div>
+    <div style="font-size:56px;margin-bottom:16px">✅</div>
+    <h2>Account verified — sign in now</h2>
+    <p class="muted" style="max-width:400px;margin:0 auto 24px">
+      This link has already been used. Your account is verified — go ahead and sign in with your username and password.
+    </p>
+    <a class="btn btn-primary" href="<?= e(url('login.php')) ?>" style="font-size:16px;padding:13px 36px">Sign In</a>
+    <p style="margin-top:16px;font-size:13px;color:var(--ink-soft)">
+      Not verified yet? <a href="<?= e(url('resend-verification.php')) ?>">Resend verification email</a>
+    </p>
   <?php endif; ?>
 
 </div>
