@@ -500,18 +500,28 @@ function send_verification_email(string $to, string $displayName, string $token)
     require_once __DIR__ . '/smtp.php';
     $siteName = defined('SITE_NAME') ? SITE_NAME : "Bosket's Alimentos";
     $link     = base_url() . '/verify-email.php?token=' . urlencode($token);
-    $subject  = 'Verify your ' . $siteName . ' account';
+    $subject  = 'Welcome to ' . $siteName . ' — confirm your email';
     $name     = htmlspecialchars($displayName ?: 'there');
-    $body = '<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f0f4f2;padding:20px">'
-          . '<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)">'
-          . '<div style="background:linear-gradient(135deg,#1f6e43,#3fa796);padding:26px 30px">'
-          . '<span style="color:#fff;font-size:20px;font-weight:700">' . htmlspecialchars($siteName) . '</span></div>'
-          . '<div style="padding:28px 30px">'
-          . '<p style="color:#333;margin-top:0">Hi ' . $name . ',</p>'
-          . '<p style="color:#333">Thanks for joining! Please verify your email address to activate your account.</p>'
-          . '<a href="' . htmlspecialchars($link) . '" style="display:inline-block;background:#3fa796;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:bold;margin-top:8px">Verify my account →</a>'
-          . '<p style="color:#888;font-size:12px;margin-top:24px">This link expires in 24 hours. If you didn\'t sign up, ignore this email.</p>'
-          . '</div></div></body></html>';
+    $body = '<!DOCTYPE html><html><body style="font-family:Arial,Helvetica,sans-serif;background:#f5f5f5;padding:30px 10px;margin:0">'
+          . '<div style="max-width:540px;margin:0 auto;background:#ffffff;border-radius:8px;border:1px solid #e0e0e0">'
+          . '<div style="padding:28px 32px;border-bottom:3px solid #1f6e43">'
+          . '<span style="font-size:18px;font-weight:700;color:#1f6e43">' . htmlspecialchars($siteName) . '</span>'
+          . '<span style="font-size:13px;color:#888;margin-left:8px">· 100% Vegetarian Fusion Food</span>'
+          . '</div>'
+          . '<div style="padding:30px 32px">'
+          . '<p style="color:#222;margin-top:0;font-size:16px">Hi ' . $name . ',</p>'
+          . '<p style="color:#444;line-height:1.6">Thank you for joining ' . htmlspecialchars($siteName) . '! Please click the button below to confirm your email address and complete your registration.</p>'
+          . '<div style="text-align:center;margin:28px 0">'
+          . '<a href="' . htmlspecialchars($link) . '" style="display:inline-block;background:#1f6e43;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:6px;font-size:15px;font-weight:600">Confirm Email Address</a>'
+          . '</div>'
+          . '<p style="color:#666;font-size:13px;line-height:1.5">If the button above doesn\'t work, copy and paste this link into your browser:<br>'
+          . '<span style="color:#1f6e43;word-break:break-all">' . htmlspecialchars($link) . '</span></p>'
+          . '</div>'
+          . '<div style="padding:16px 32px;background:#f9f9f9;border-top:1px solid #e8e8e8;border-radius:0 0 8px 8px">'
+          . '<p style="color:#999;font-size:12px;margin:0">This confirmation link expires in 24 hours. If you did not create an account on ' . htmlspecialchars($siteName) . ', please ignore this email.</p>'
+          . '</div></div>'
+          . '<p style="text-align:center;color:#bbb;font-size:11px;margin-top:16px">' . htmlspecialchars($siteName) . ' · bosketsalimentos.com</p>'
+          . '</body></html>';
     smtp_send($to, $subject, $body);
 }
 

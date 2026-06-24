@@ -90,13 +90,18 @@ function smtp_send(string $to, string $subject, string $htmlBody): bool|string
     // ── Build message ─────────────────────────────────────────────────────────
     $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
     $boundary = md5(uniqid('', true));
+    $msgId    = '<' . time() . '.' . rand(1000,9999) . '@' . parse_url('https://' . $from, PHP_URL_HOST) . '>';
     $headers  = "Date: " . date('r') . "\r\n"
+              . "Message-ID: $msgId\r\n"
               . "From: =?UTF-8?B?" . base64_encode($name) . "?= <$from>\r\n"
+              . "Reply-To: $from\r\n"
               . "To: <$to>\r\n"
               . "Subject: $encodedSubject\r\n"
               . "MIME-Version: 1.0\r\n"
               . "Content-Type: multipart/alternative; boundary=\"$boundary\"\r\n"
-              . "X-Mailer: BosketsAlimentos-SMTP/1.0\r\n";
+              . "X-Mailer: BosketsAlimentos/1.0\r\n"
+              . "Precedence: bulk\r\n"
+              . "Auto-Submitted: auto-generated\r\n";
 
     $plainText = strip_tags(str_replace(['<br>','<br/>','<br />','</p>','</div>'], "\n", $htmlBody));
 
