@@ -25,7 +25,7 @@ $latest = $pdo->query(
   LEFT JOIN categories c ON c.id = r.category_id
   LEFT JOIN cuisines cu ON cu.id = r.cuisine_id
       WHERE r.status = 'published'
-   ORDER BY r.created_at DESC LIMIT 8"
+   ORDER BY r.id DESC LIMIT 8"
 )->fetchAll();
 
 $hotTopics = $pdo->query(
