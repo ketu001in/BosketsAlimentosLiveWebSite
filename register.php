@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Send verification email — do NOT log in yet
             $verifyToken = generate_verify_token($newId);
             send_verification_email($old['email'], $old['display_name'], $verifyToken);
-            flash('info', '🌿 Account created! We\'ve sent a verification email to <strong>' . e($old['email']) . '</strong>. Please check your inbox and click the link to activate your account before signing in.');
+            flash('info', '🌿 Account created! Verification email sent to ' . $old['email'] . '. Check your inbox and spam folder, then click the link to activate your account.');
             redirect('login.php');
         }
     }
