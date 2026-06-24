@@ -232,6 +232,17 @@ function ensure_recipe_youtube_column(): void
     }
 }
 
+/** recipes.is_pinned — admin can pin up to 4 recipes to appear first on homepage grid. */
+function ensure_recipe_pinned_column(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    if (!db()->query("SHOW COLUMNS FROM recipes LIKE 'is_pinned'")->fetch()) {
+        db()->exec("ALTER TABLE recipes ADD COLUMN is_pinned TINYINT(1) NOT NULL DEFAULT 0 AFTER is_featured");
+    }
+}
+
 /** recipes.prep_time / cook_time — optional fields for SEO schema (stored as minutes). */
 function ensure_recipe_time_columns(): void
 {

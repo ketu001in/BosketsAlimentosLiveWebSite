@@ -3,6 +3,7 @@
 require_once __DIR__ . '/_admin.php';
 ensure_star_recipe_table();
 ensure_recipe_pending_status();
+ensure_recipe_pinned_column();
 
 // ── POST actions ──────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -92,6 +93,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('success', 'Star Recipe settings saved.');
             break;
 
+        // ── Grid pin ──────────────────────────────────────────────────────────
+        case 'pin_recipe':
+            $pinCount = (int)$pdo->query("SELECT COUNT(*) FROM recipes WHERE is_pinned=1")->fetchColumn();
+            if ($pinCount >= 4) {
+                flash('error', 'Maximum 4 recipes can be pinned. Unpin one first.');
+            } else {
+                $pdo->prepare("UPDATE recipes SET is_pinned=1 WHERE id=?")->execute([$id]);
+                flash('success', '📌 Pinned to homepage grid (' . ($pinCount+1) . '/4 slots used).');
+            }
+            break;
+        case 'unpin_recipe':
+            $pdo->prepare("UPDATE recipes SET is_pinned=0 WHERE id=?")->execute([$id]);
+            flash('success', 'Recipe unpinned from homepage grid.');
+            break;
+
         // ── Recipe moderation ─────────────────────────────────────────────────
         case 'feature':
         case 'unfeature':
@@ -173,6 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ── Data queries ──────────────────────────────────────────────────────────────
 $starCfg      = db()->query("SELECT * FROM star_recipe WHERE id=1")->fetch();
 $starRecipeId = (int)($starCfg['recipe_id'] ?? 0);
+$pinnedCount  = (int)db()->query("SELECT COUNT(*) FROM recipes WHERE is_pinned=1")->fetchColumn();
 $activeTab    = $_GET['tab'] ?? 'pending';
 
 $pending = db()->query(
@@ -185,9 +202,9 @@ $pending = db()->query(
 )->fetchAll();
 
 $recipes = db()->query(
-    "SELECT r.id, r.title, r.status, r.is_featured, r.views, r.created_at, u.username
+    "SELECT r.id, r.title, r.status, r.is_featured, r.is_pinned, r.views, r.created_at, u.username
        FROM recipes r JOIN users u ON u.id = r.user_id
-      WHERE r.status != 'pending' ORDER BY r.created_at DESC LIMIT 150"
+      WHERE r.status != 'pending' ORDER BY r.is_pinned DESC, r.id DESC LIMIT 150"
 )->fetchAll();
 
 $comments = db()->query(
@@ -333,6 +350,21 @@ include dirname(__DIR__) . '/includes/header.php';
 
   <!-- ══ RECIPES ══════════════════════════════════════════════════════════════ -->
   <?php elseif ($activeTab === 'recipes'): ?>
+
+  <!-- Pin to homepage grid info -->
+  <div style="background:<?= $pinnedCount >= 4 ? 'var(--orange-100)' : 'var(--green-50)' ?>;border:1.5px solid <?= $pinnedCount >= 4 ? '#f0c040' : 'var(--green-200)' ?>;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:22px">📌</span>
+    <div>
+      <strong style="color:<?= $pinnedCount >= 4 ? '#7a5c00' : 'var(--green-900)' ?>">
+        <?= $pinnedCount ?>/4 recipes pinned to homepage grid
+      </strong>
+      <p style="margin:2px 0 0;font-size:13px;color:var(--ink-soft)">
+        Pinned recipes always appear first in the "Fresh from the kitchen" grid on the homepage.
+        <?= $pinnedCount >= 4 ? '<strong>All 4 slots used — unpin a recipe before pinning another.</strong>' : 'Click 📌 Pin on any recipe below to add it.' ?>
+      </p>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="table-wrap">
     <table class="data">
@@ -343,6 +375,7 @@ include dirname(__DIR__) . '/includes/header.php';
             <a href="<?= e(url('recipe.php?id=' . (int)$r['id'])) ?>"><?= e($r['title']) ?></a>
             <?php if ($r['is_featured']): ?><span class="pill pill-orange">★</span><?php endif; ?>
             <?php if ((int)$r['id'] === $starRecipeId): ?><span class="pill" style="background:#ffd700;color:#5a4000">⭐</span><?php endif; ?>
+            <?php if ($r['is_pinned']): ?><span class="pill" style="background:#e0f0ff;color:#0055aa">📌</span><?php endif; ?>
           </td>
           <td class="small">@<?= e($r['username']) ?></td>
           <td><?= (int)$r['views'] ?></td>
@@ -358,6 +391,11 @@ include dirname(__DIR__) . '/includes/header.php';
               <?php endif; ?>
               <?php if ((int)$r['id'] !== $starRecipeId): ?>
                 <button class="btn btn-sm btn-ghost" name="action" value="set_star" style="color:#b08000;border-color:#e0c040">⭐ Star</button>
+              <?php endif; ?>
+              <?php if ($r['is_pinned']): ?>
+                <button class="btn btn-sm btn-ghost" name="action" value="unpin_recipe" style="color:#0055aa;border-color:#aaccff" title="Remove from homepage grid">📌 Unpin</button>
+              <?php elseif ($pinnedCount < 4): ?>
+                <button class="btn btn-sm btn-ghost" name="action" value="pin_recipe" style="color:#0055aa;border-color:#aaccff" title="Pin to homepage grid">📌 Pin</button>
               <?php endif; ?>
               <?php if ($r['status'] === 'published'): ?>
                 <button class="btn btn-sm btn-ghost" name="action" value="remove_recipe">Hide</button>
