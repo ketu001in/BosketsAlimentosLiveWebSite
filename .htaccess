@@ -14,10 +14,10 @@ RedirectMatch 404 "/\.(?!well-known)"
 ErrorDocument 404 /index.php
 
 # ---- upload limits (Hostinger LiteSpeed honours these; otherwise set in hPanel -> PHP Configuration)
-php_value upload_max_filesize 256M
-php_value post_max_size 512M
-php_value max_execution_time 600
-php_value memory_limit 512M
+php_value upload_max_filesize 64M
+php_value post_max_size 128M
+php_value max_execution_time 120
+php_value memory_limit 256M
 
 # ---- gzip / deflate compression
 <IfModule mod_deflate.c>
