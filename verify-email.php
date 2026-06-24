@@ -52,7 +52,7 @@ include __DIR__ . '/includes/header.php';
   <?php elseif ($status === 'expired'): ?>
     <div style="font-size:56px;margin-bottom:16px">⏰</div>
     <h2>Link expired</h2>
-    <p class="muted">This verification link has expired (links are valid for 24 hours). Please request a new one.</p>
+    <p class="muted">This verification link has expired (links are valid for 7 days). Please request a new one.</p>
     <a class="btn btn-primary" href="<?= e(url('resend-verification.php')) ?>" style="margin-top:20px">Resend verification email</a>
 
   <?php else: ?>

@@ -489,7 +489,7 @@ function ensure_phone_columns(): void
 function generate_verify_token(int $userId): string
 {
     $token = bin2hex(random_bytes(32));
-    db()->prepare("UPDATE users SET verify_token=?, verify_token_expires=DATE_ADD(NOW(), INTERVAL 24 HOUR) WHERE id=?")
+    db()->prepare("UPDATE users SET verify_token=?, verify_token_expires=DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id=?")
         ->execute([$token, $userId]);
     return $token;
 }
