@@ -171,11 +171,43 @@ include __DIR__ . '/includes/header.php';
     </div>
   </div>
 
-  <?php if ($embed): ?>
-    <div class="panel recipe-video" style="margin-top:28px">
-      <h3>▶ Watch how it's made</h3>
-      <?= $embed ?>
+  <?php if ($_ytUrl && ($ytThumbId = youtube_id($_ytUrl))): ?>
+    <div style="margin-top:28px">
+      <h3 style="margin-bottom:12px">▶ Watch how it's made</h3>
+      <!-- Compact clickable YouTube thumbnail -->
+      <div class="yt-thumb-wrap" onclick="openYtLightbox('<?= e($ytThumbId) ?>')" title="Watch on YouTube">
+        <img src="https://img.youtube.com/vi/<?= e($ytThumbId) ?>/hqdefault.jpg"
+             alt="Watch <?= e($r['title']) ?> video"
+             onerror="this.src='https://img.youtube.com/vi/<?= e($ytThumbId) ?>/mqdefault.jpg'">
+        <div class="yt-play-btn" aria-hidden="true">
+          <svg viewBox="0 0 68 48" width="48" height="34">
+            <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="#f00"/>
+            <path d="M45 24 27 14v20" fill="#fff"/>
+          </svg>
+        </div>
+      </div>
     </div>
+
+    <!-- YouTube lightbox -->
+    <div id="yt-lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9000;align-items:center;justify-content:center" onclick="if(event.target===this)closeYtLightbox()">
+      <button onclick="closeYtLightbox()" style="position:absolute;top:14px;right:18px;background:rgba(255,255,255,.12);border:0;color:#fff;font-size:28px;padding:6px 12px;border-radius:6px;cursor:pointer">&times;</button>
+      <div style="width:min(720px,95vw);aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden">
+        <iframe id="yt-frame" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:0"></iframe>
+      </div>
+    </div>
+    <script>
+    function openYtLightbox(id){
+      var lb=document.getElementById('yt-lightbox');
+      document.getElementById('yt-frame').src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1';
+      lb.style.display='flex';document.body.style.overflow='hidden';
+    }
+    function closeYtLightbox(){
+      document.getElementById('yt-frame').src='';
+      document.getElementById('yt-lightbox').style.display='none';
+      document.body.style.overflow='';
+    }
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')closeYtLightbox();});
+    </script>
   <?php endif; ?>
 
   <div class="profile-cols" style="margin-top:36px">
