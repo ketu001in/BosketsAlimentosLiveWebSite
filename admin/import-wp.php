@@ -14,6 +14,9 @@ ensure_recipe_pending_status();
 
 $results = null;
 $preview = null;
+// Temp folder on the server (not session — avoids session expiry)
+$importTmpDir = dirname(__DIR__) . '/uploads/wp-import-tmp/';
+if (!is_dir($importTmpDir)) mkdir($importTmpDir, 0755, true);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -33,21 +36,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $data    = json_decode($jsonContent, true);
                 $preview = $data;
-                // Store ZIP temporarily for the actual import
-                $tmpPath = sys_get_temp_dir() . '/ba_wp_import.zip';
-                move_uploaded_file($tmpZip, $tmpPath);
-                $_SESSION['_wp_import_tmp'] = $tmpPath;
-                $_SESSION['_wp_import_ts']  = time();
+                // Save ZIP to server folder (not session) — avoids session expiry
+                $importId  = bin2hex(random_bytes(8));
+                $savedZip  = $importTmpDir . $importId . '.zip';
+                move_uploaded_file($tmpZip, $savedZip);
+                $preview['_import_id'] = $importId;
             }
         }
     }
 
     // ── Run actual import ────────────────────────────────────────────────────
     if ($action === 'import') {
-        csrf_check();
-        $tmpPath = $_SESSION['_wp_import_tmp'] ?? '';
-        if (!$tmpPath || !file_exists($tmpPath) || (time() - ($_SESSION['_wp_import_ts'] ?? 0)) > 3600) {
-            flash('error', 'Import session expired. Please upload the ZIP again.');
+        $importId = preg_replace('/[^a-f0-9]/', '', $_POST['import_id'] ?? '');
+        $tmpPath  = $importTmpDir . $importId . '.zip';
+        if (!$importId || !file_exists($tmpPath)) {
+            flash('error', 'Import file not found. Please upload the ZIP again.');
             redirect('admin/import-wp.php');
         }
 
@@ -151,8 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $zip->close();
-        unlink($tmpPath);
-        unset($_SESSION['_wp_import_tmp'], $_SESSION['_wp_import_ts']);
+        @unlink($tmpPath); // delete the temp ZIP after import
 
         $results = compact('imported', 'skipped', 'failed');
         flash('success', "Import complete: $imported imported, $skipped skipped (duplicates), $failed failed.");
@@ -222,7 +224,8 @@ include dirname(__DIR__) . '/includes/header.php';
 
       <form method="post" style="margin-top:20px">
         <?= csrf_field() ?>
-        <input type="hidden" name="action" value="import">
+        <input type="hidden" name="action"    value="import">
+        <input type="hidden" name="import_id" value="<?= e($preview['_import_id'] ?? '') ?>">
         <button class="btn btn-primary" type="submit"
                 onclick="this.textContent='Importing... please wait ⏳ (may take 1-2 min)';this.disabled=true;this.form.submit()">
           🚀 Start Import (<?= (int)$preview['total'] ?> recipes)
