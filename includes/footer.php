@@ -30,6 +30,6 @@
   </div>
   <div class="footer-base">© <?= date('Y') ?> <?= e(SITE_NAME) ?> · Made with 💚 for vegetarian fusion food &nbsp;·&nbsp; <a href="<?= e(url('privacy-policy.php')) ?>" style="color:inherit;opacity:.7">Privacy Policy</a></div>
 </footer>
-<script src="<?= e(url('assets/js/main.js')) ?>"></script>
+<script src="<?= e(url('assets/js/main.js')) ?>?v=2"></script>
 </body>
 </html>
