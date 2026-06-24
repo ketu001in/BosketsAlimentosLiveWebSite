@@ -502,8 +502,11 @@ function send_verification_email(string $to, string $displayName, string $token)
           . '<p style="color:#888;font-size:12px;margin-top:24px">This link expires in 24 hours. If you didn\'t sign up, ignore this email.</p>'
           . '</div></div></body></html>';
     $headers = implode("\r\n", ['MIME-Version: 1.0','Content-Type: text/html; charset=UTF-8',
-        'From: ' . $siteName . ' <' . $from . '>','Reply-To: ' . $from]);
-    @mail($to, $subject, $body, $headers);
+        'From: ' . $siteName . ' <' . $from . '>',
+        'Reply-To: ' . $from,
+        'X-Mailer: PHP/' . PHP_VERSION]);
+    // -f sets the envelope sender (Return-Path) — required by many Hostinger servers
+    @mail($to, $subject, $body, $headers, '-f' . $from);
 }
 
 /** Generate a unique unsubscribe token for a user (idempotent). */
