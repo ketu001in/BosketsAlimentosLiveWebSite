@@ -32,9 +32,9 @@ if ($token) {
             // Token exists but expired
             $status = 'expired';
         } else {
-            // Valid token — verify now
+            // Valid token — verify now (keep token so re-clicks show 'already verified')
             db()->prepare(
-                "UPDATE users SET email_verified_at = NOW(), verify_token = NULL, verify_token_expires = NULL WHERE id = ?"
+                "UPDATE users SET email_verified_at = NOW() WHERE id = ?"
             )->execute([$user['id']]);
             $_SESSION['user_id'] = (int)$user['id'];
             session_regenerate_id(true);
