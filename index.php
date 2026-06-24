@@ -43,6 +43,7 @@ $counts = [
     'topics'  => $pdo->query("SELECT COUNT(*) FROM forum_topics WHERE status='visible'")->fetchColumn(),
 ];
 
+ensure_recipe_pinned_column();
 $starRecipe = get_star_recipe();
 
 $pageTitle = 'Home';
