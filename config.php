@@ -26,11 +26,17 @@ define('MAX_IMAGE_BYTES', 5 * 1024 * 1024);   // 5 MB  (avatars, recipe & step p
 define('MAX_VIDEO_BYTES', 25 * 1024 * 1024);  // 25 MB (recipe step videos)
 
 // ---------------------------------------------------------------- Email
-// Address used as the From: header on password-reset emails.
-// On Hostinger, use an address on your own domain (create it in
-// hPanel -> Emails) so messages don't land in spam.
-// Leave '' to auto-build 'no-reply@yourdomain.com' from the request host.
+// PHP mail() fallback (used only if SMTP not configured)
 define('MAIL_FROM', '');
+
+// ---------------------------------------------------------------- SMTP (recommended — far more reliable than mail())
+// Get credentials from hPanel → Emails → noreply@bosketsalimentos.com → Connect Devices
+define('SMTP_HOST', 'smtp.hostinger.com');
+define('SMTP_PORT', 587);                          // 587 = STARTTLS (recommended)
+define('SMTP_USER', 'noreply@bosketsalimentos.com');
+define('SMTP_PASS', '');                           // ← paste your email password here
+define('SMTP_FROM', 'noreply@bosketsalimentos.com');
+define('SMTP_NAME', "Bosket's Alimentos");
 
 // ---------------------------------------------------------------- Social login (optional)
 // Leave these blank to hide the "Continue with Google / Facebook" buttons.
